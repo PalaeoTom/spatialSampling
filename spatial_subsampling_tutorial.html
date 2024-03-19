@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gawain T. Antell. Adapted by Thomas J. Smith">
+
+<title>Spatial subsampling using divvy</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="spatial_subsampling_tutorial_files/libs/clipboard/clipboard.min.js"></script>
+<script src="spatial_subsampling_tutorial_files/libs/quarto-html/quarto.js"></script>
+<script src="spatial_subsampling_tutorial_files/libs/quarto-html/popper.min.js"></script>
+<script src="spatial_subsampling_tutorial_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="spatial_subsampling_tutorial_files/libs/quarto-html/anchor.min.js"></script>
+<link href="spatial_subsampling_tutorial_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="spatial_subsampling_tutorial_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="spatial_subsampling_tutorial_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="spatial_subsampling_tutorial_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="spatial_subsampling_tutorial_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Spatial subsampling using divvy</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gawain T. Antell. Adapted by Thomas J. Smith </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="contents" class="level2">
+<h2 class="anchored" data-anchor-id="contents">Contents</h2>
+<ul>
+<li><p>Prepare Paleobiology Database records</p></li>
+<li><p>Subsampling examples</p>
+<ul>
+<li><p>Circular subsampling</p></li>
+<li><p>PBDB collections, references, and duplicate entries</p></li>
+<li><p>Nearest-neighbour subsampling</p></li>
+<li><p>Latitudinal subsampling</p></li>
+</ul></li>
+<li><p>Analysis on subsampled data</p></li>
+<li><p>References</p></li>
+</ul>
+<p>This document introduces rationale for spatial subsampling and covers common use cases for <code>divvy</code> functions, including example R code. Sections below discuss ways to format data, implement three different subsampling routines, and calculate common biodiversity metrics.</p>
+</section>
+<section id="prepare-paleobiology-database-records" class="level2">
+<h2 class="anchored" data-anchor-id="prepare-paleobiology-database-records">Prepare Paleobiology Database records</h2>
+<p>We begin by loading the <code>divvy</code> package itself, and note its geospatial package dependencies <code>units</code>, <code>sf</code>, <code>terra</code>, and <code>vegan</code>, and the <code>iNEXT</code> package for taxonomic richness rarefaction.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(divvy) </span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(units)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(terra)</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(vegan)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(iNEXT)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><code>divvy</code> includes the attached dataset <code>bivalves</code>, a download of fossil occurrences from the <a href="https://paleobiodb.org/">Paleobiology Database</a> (PBDB) that has been subset to a few relevant columns and minimally cleaned. <code>bivalves</code> contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. For more information about the dataset, query <code>?bivalves</code>.</p>
+<p>The attached dataset is provided only as an example for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications. The <code>fossilbrush</code> package provides a palette of tools to help clean PBDB data.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">data</span>(bivalves)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(bivalves)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        genus paleolng paleolat collection_no reference_no
+1        Lima   176.85   -42.69         34849         9315
+2 Nemocardium   176.85   -42.69         34849        11706
+3      Ostrea   176.85   -42.69         34849        11706
+4     Chlamys   176.85   -42.69         34849         9315
+5  Pycnodonte  -114.37    33.76         34857         9338
+6      Euvola  -114.37    33.76         34857         9338
+             environment max_ma min_ma          accepted_name
+1             basin reef  5.333    3.6                   Lima
+2             basin reef  5.333    3.6 Nemocardium (Pratulum)
+3             basin reef  5.333    3.6       Ostrea chilensis
+4             basin reef  5.333    3.6                Chlamys
+5 marginal marine indet.  5.333    3.6   Pycnodonte heermanni
+6 marginal marine indet.  5.333    3.6           Euvola keepi</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(bivalves)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 8095</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(<span class="fu">unique</span>(bivalves<span class="sc">$</span>genus))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 550</code></pre>
+</div>
+</div>
+<p>The latitude-longitude coordinates in the PBDB come from many different studies, which means the precision and accuracy vary across records. Fossils collected from the same locality may be reported with different coordinates due purely to different GPS equipment, mapping, or decimal rounding, for example. The spatial subsampling procedures below put great weight on the number of unique localities in a region, so it is important to avoid inflating the site number artificially.</p>
+<p>One standard way to smooth over slight discrepancies in occurrence positions is to convert point coordinates (‘vector’ spatial data) to grid cells (‘raster’ spatial data)<a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>. Effectively, one lays a web over a study region and records the position of polygons (‘grid cells’) in which points fall, rather than the original xy point coordinates. An additional advantage of raster over vector data is the tremendous increase in efficiency of spatial computations.</p>
+<p>Palaeobiologists often convert abundance counts to binary presence-absence data for taxon occurrences in grid cells. This practice is especially common for PBDB data because abundance information is usually non-standard, if it is recorded at all. (Read below for further notes about duplicate taxon occurrences.)</p>
+<p>Many PBDB analyses are also global in extent, which makes the choice of <a href="https://rspatial.org/spatial/6-crs.html">coordinate reference system</a> for the raster grid important. The areas and shapes of grid cells at the poles vs.&nbsp;the equator can differ widely with certain reference systems or map projections. The code below converts latitude-longitude coordinates to the Equal Earth reference system, an equal-area projection for world maps. Another option of friendly raster grid system is the is the <code>icosa</code> package, developed by palaeobiologist Ádám Kocsis, which creates tessellations of pentagons and hexagons. The polygons are approximately equal in area and shape across the globe. The spatial resolution of the grid is controlled by arguments in the <code>hexagrid</code> function.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># initialise Equal Earth projected coordinates</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>rWorld <span class="ot">&lt;-</span> <span class="fu">rast</span>()</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>prj <span class="ot">&lt;-</span> <span class="st">'EPSG:8857'</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>rPrj <span class="ot">&lt;-</span> <span class="fu">project</span>(rWorld, prj, <span class="at">res =</span> <span class="dv">200000</span>) <span class="co"># 200,000m is approximately 2 degrees</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="fu">values</span>(rPrj) <span class="ot">&lt;-</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">ncell</span>(rPrj)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># coordinate column names for the current and target coordinate reference system</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>xyCartes <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'paleolng'</span>,<span class="st">'paleolat'</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>xyCell   <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">'cellX'</span>,<span class="st">'cellY'</span>)</span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="co"># retrieve coordinates of raster cell centroids</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>llOccs <span class="ot">&lt;-</span> <span class="fu">vect</span>(bivalves, <span class="at">geom =</span> xyCartes, <span class="at">crs =</span> <span class="st">'epsg:4326'</span>)</span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>prjOccs <span class="ot">&lt;-</span> <span class="fu">project</span>(llOccs, prj)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>bivalves<span class="sc">$</span>cell <span class="ot">&lt;-</span> <span class="fu">cells</span>(rPrj, prjOccs)[,<span class="st">'cell'</span>]</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>bivalves[, xyCell] <span class="ot">&lt;-</span> <span class="fu">xyFromCell</span>(rPrj, bivalves<span class="sc">$</span>cell)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We can inspect the spatial distribution of data by converting occurrence points to <code>spatial features</code> (a class that contains coordinate system information) and plotting them against a basic world map, supplied here from the <code>rnaturalearth</code> and <code>rnaturalearthdata</code> packages.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>occUniq <span class="ot">&lt;-</span> <span class="fu">uniqify</span>(bivalves, xyCell)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>ptsUniq <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(occUniq, <span class="at">coords =</span> xyCell, <span class="at">crs =</span> prj)</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rnaturalearth)</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rnaturalearthdata)</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2) <span class="co"># for plot visualisation</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>world <span class="ot">&lt;-</span> <span class="fu">ne_countries</span>(<span class="at">scale =</span> <span class="st">"medium"</span>, <span class="at">returnclass =</span> <span class="st">"sf"</span>)</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>worldP <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(<span class="at">data =</span> world) <span class="sc">+</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>() <span class="sc">+</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> ptsUniq, <span class="at">shape =</span> <span class="dv">17</span>, <span class="at">color =</span> <span class="st">'blue'</span>)</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(worldP)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="spatial_subsampling_tutorial_files/figure-html/map%20data-1.png" class="img-fluid figure-img" width="576"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="subsampling-examples" class="level2">
+<h2 class="anchored" data-anchor-id="subsampling-examples">Subsampling examples</h2>
+<p><code>divvy</code> offers three approaches to spatially subsample data:</p>
+<ul>
+<li><p><code>cookies</code>: Imposes a radial constraint on the spatial bounds of a subsample and standardises area by rarefying the number of localities</p></li>
+<li><p><code>clustr</code>: Aggregates sites that are nearest neighbours (connecting them with a minimum spanning tree) to impose a maximum diameter on the spatial bounds of a subsample, and optionally rarefies localities</p></li>
+<li><p><code>bandit</code>: Rarefies the number of localities within bands of equal latitude</p></li>
+</ul>
+<section id="circular-subsampling" class="level3">
+<h3 class="anchored" data-anchor-id="circular-subsampling">Circular subsampling</h3>
+<p>First let’s apply circular subsampling, which both constrains the spatial bounds of a sample to a specified radius from a random start point and standardises the spatial area of a sample to a specified number of sites. (Recall that sites were allocated to equal-area polygons in the preceding section.) The radius (1500 km) and the numbers of sites (n = 12) and iterations (n = 500) are specified here to match the subsampling parameters in the global analysis of <span class="citation" data-cites="Antell2020">@Antell2020</span>.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>circLocs <span class="ot">&lt;-</span> <span class="fu">cookies</span>(<span class="at">dat =</span> bivalves,  </span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>                    <span class="at">xy =</span> xyCell,</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">iter =</span> <span class="dv">500</span>, </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>                    <span class="at">nSite =</span> <span class="dv">12</span>, </span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>                    <span class="at">r =</span> <span class="dv">1500</span>, <span class="co"># radial distance in km</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">weight =</span> <span class="cn">TRUE</span>, <span class="co"># probabilistically aggregate subsampling sites</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">crs =</span> prj, <span class="co"># Equal Earth projection</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>                    <span class="at">output =</span> <span class="st">'locs'</span>)</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(circLocs)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 500</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>circLocs[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        cellX   cellY
+1019 -6543959 4739440
+56   -7343959 3539440
+7586 -7143959 3939440
+1278 -7343959 3939440
+1049 -6543959 4539440
+2921 -7143959 3539440
+1054 -6743959 4339440
+1076 -6743959 4539440
+122  -7743959 3939440
+1251 -7543959 3939440
+2065 -7543959 3739440
+911  -6543959 4339440</code></pre>
+</div>
+</div>
+<p>Subsamples are returned as elements in a <code>list</code> of length <code>iter</code>. If <code>output = "locs"</code> (default), each element is a <code>data.frame</code> of coordinates for the <code>nSite</code> sites included in a subsample. This output may be useful as an intermediate object on which to run custom functions that calculate ecological parameters of interest, for instance metrics of spatial connectedness among fossil sites. We can also use location output to explore where the subsample plots on our earlier map. This subsample happens to fall along the East and Gulf Coasts of North America.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># over-plot the subsample locations</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>smplPts <span class="ot">&lt;-</span> <span class="fu">st_as_sf</span>(circLocs[[<span class="dv">1</span>]], <span class="at">coords =</span> xyCell, <span class="at">crs =</span> prj)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>worldP <span class="sc">+</span></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> smplPts, <span class="at">shape =</span> <span class="dv">17</span>, <span class="at">color =</span> <span class="st">'red'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="spatial_subsampling_tutorial_files/figure-html/map%20subsample-1.png" class="img-fluid figure-img" width="576"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Now note that the first code chunk in this section set the <code>weight</code> argument of <code>cookies()</code> to <code>TRUE</code>. Weighting is designed to cluster subsample sites more compactly than random selection; that is, distant points will tend to be left out. Weighting is achieved by increasing the probability of drawing a site the closer it falls to the central occurrence point (‘seed cell’) in a given subsample. The seed cell is always included in weighted subsamples (but not necessarily in unweighted ones) and corresponds to the first row listed in the output. To visibilise the weighted subsample method further, let’s extract the seed location and manually plot the circular constraint around it.</p>
+<div class="cell" data-layout-align="center">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>cntr <span class="ot">&lt;-</span> smplPts[<span class="dv">1</span>,]</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="co"># distances inferred to be meters based on lat-long coord system</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>r <span class="ot">&lt;-</span> <span class="dv">1500</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>buf <span class="ot">&lt;-</span> <span class="fu">st_buffer</span>(cntr, <span class="at">dist =</span> r<span class="sc">*</span><span class="dv">1000</span>)</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a><span class="co"># over-plot subsample boundary region and included sites</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>worldP <span class="sc">+</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> smplPts, <span class="at">shape =</span> <span class="dv">17</span>, <span class="at">color =</span> <span class="st">'red'</span>) <span class="sc">+</span></span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="at">data =</span> buf, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">linewidth =</span> <span class="dv">1</span>, <span class="at">color =</span> <span class="st">'red'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="spatial_subsampling_tutorial_files/figure-html/count%20pool%20size-1.png" class="img-fluid figure-img" width="576"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>This inspection also reveals that there happen to be 14 sites in the region from which to draw a subsample of 12.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>inBuf <span class="ot">&lt;-</span> <span class="fu">st_intersects</span>(ptsUniq, buf, <span class="at">sparse =</span> <span class="cn">FALSE</span>) </span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sum</span>(inBuf)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 14</code></pre>
+</div>
+</div>
+<p>As demonstrated above, the location-type output of <code>divvy</code> subsampling functions can be useful in certain cases; however, more often researchers will want to retrieve taxon records. Changing <code>output</code> from <code>"locs"</code> to <code>"full"</code>, each element of the returned object now contains the subset of occurrence rows from <code>bivalves</code> located at the sites in a subsample. This output will be useful for analysis in the final vignette section below.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">7</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="co"># same parameter values as above except for 'output'</span></span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>circOccs <span class="ot">&lt;-</span> <span class="fu">cookies</span>(<span class="at">dat =</span> bivalves, </span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                    <span class="at">xy =</span> xyCell, </span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>                    <span class="at">iter =</span> <span class="dv">500</span>, </span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                    <span class="at">nSite =</span> <span class="dv">12</span>, </span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>                    <span class="at">r =</span> <span class="dv">1500</span>, </span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>                    <span class="at">weight =</span> <span class="cn">TRUE</span>, </span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>                    <span class="at">crs =</span> prj,</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>                    <span class="at">output =</span> <span class="st">'full'</span>)</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>( circOccs[[<span class="dv">8</span>]] )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>          genus paleolng paleolat collection_no reference_no    environment
+83      Anadara   -69.82    10.25         41552        11132  marine indet.
+409  Iliochione   -79.18     0.54         51887        13814       offshore
+410 Undulostrea   -79.18     0.54         51887        13814       offshore
+411  Argopecten   -79.18     0.54         51887        13814       offshore
+412  Argopecten   -79.18     0.54         51881        13814 coastal indet.
+413        Arca   -79.18     0.54         51881        13814 coastal indet.
+    max_ma min_ma                accepted_name cell    cellX     cellY
+83   5.333  3.600 Anadara (Larkinia) notabilis 6074 -6543959 1339439.8
+409  5.333  2.588      Iliochione callistoides 7101 -7543959  139439.8
+410  5.333  2.588          Undulostrea megodon 7101 -7543959  139439.8
+411  5.333  2.588       Argopecten ventricosus 7101 -7543959  139439.8
+412  5.333  2.588       Argopecten ventricosus 7101 -7543959  139439.8
+413  5.333  2.588                         Arca 7101 -7543959  139439.8</code></pre>
+</div>
+</div>
+</section>
+<section id="pbdb-collections-references-and-duplicate-entries" class="level3">
+<h3 class="anchored" data-anchor-id="pbdb-collections-references-and-duplicate-entries">PBDB collections, references, and duplicate entries</h3>
+<p>Data fed into <code>divvy</code> subsampling functions can contain duplicate taxon–location records, which are common from the collections-based format of PBDB data entry. For instance, the subsample output printed above shows <em>Argopecten</em> twice at the same coordinates. The duplicates stem from different collections (#51881 and #51887). In the previous section we standardised spatial dispersion and area, but at this point we could rarefy the number of collections or references, too, as a standardisation for sampling effort.</p>
+<p>The study that developed the circular buffer approach for regional subsampling (implemented with <code>cookies()</code>) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells <span class="citation" data-cites="Antell2020">[@Antell2020]</span>. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts <span class="citation" data-cites="Alroy2008">[@Alroy2008]</span>. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).</p>
+<p>In contrast, the study that developed the nearest-neighbour subsampling approach (described below) rarefied collections within references, following <span class="citation" data-cites="Alroy2014">@Alroy2014</span>, but avoided rarefying sites/cells <span class="citation" data-cites="Close2017">[@Close2017]</span>. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The <code>divvy</code> diversity summary function (<code>sdSumry()</code>) and the most recent study to use nearest-neighbour subsamples <span class="citation" data-cites="Close2020">[@Close2020]</span> call on the <code>iNEXT</code> implementation of coverage-based richness estimation, which ignores the PBDB collections/references data structure. Therefore, users wishing to to rarefy collections and/or references should write custom richness estimation scripts or adapt Alroy’s Perl scripts.</p>
+<p>To filter out duplicate taxon–location records from a datset, thereby reducing object size and saving memory, <code>divvy</code> offers the <code>uniqify()</code> function. Omitting duplicate occurrences from <code>bivalves</code> removes more than 5,000 rows.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>bivUniq <span class="ot">&lt;-</span> <span class="fu">uniqify</span>(bivalves, <span class="at">taxVar =</span> <span class="st">'genus'</span>, xyCell)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(bivUniq)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 3061</code></pre>
+</div>
+</div>
+</section>
+<section id="nearest-neighbour-subsampling" class="level3">
+<h3 class="anchored" data-anchor-id="nearest-neighbour-subsampling">Nearest-neighbour subsampling</h3>
+<p>As mentioned in the preceding section, papers to date that analysed spatial subsamples constructed with the nearest-neighbour method constrained only the spatial dispersion and not cumulative area or number of sites <span class="citation" data-cites="Close2017 Close2020">[@Close2017; @Close2020]</span>. For backwards compatibility with these originator publications, the <code>clustr()</code> function contains an option to turn off site rarefaction (argument <code>nSite = NULL</code>). However, depending on study design it may well be prudent to standardise the area/number of sites when using the nearest-neighbour method, as is mandated in the circular subsampling method. To set the site quota for either method, use the <code>nSite</code> argument.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>nnLocs <span class="ot">&lt;-</span> <span class="fu">clustr</span>(<span class="at">dat =</span> bivalves, </span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">xy =</span> xyCell, </span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">iter =</span> <span class="dv">500</span>, </span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">distMax =</span> <span class="dv">3000</span>, <span class="co"># diameter = 2x the circular radius set above</span></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">nSite =</span> <span class="dv">12</span>,</span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">crs =</span> prj</span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>                 )</span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>nnLocs[[<span class="dv">1</span>]]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>        cellX      cellY
+81   -6343959 1339439.78
+1891 -7343959  -60560.22
+5884 -7343959  539439.78
+6477 -7743959 -460560.22
+1491 -5743959 1339439.78
+2415 -7943959 1139439.78
+409  -7543959  139439.78
+5916 -6543959 1539439.78
+1936 -6743959 2339439.78
+3887 -7743959 1339439.78
+74   -5943959 1339439.78
+5751 -7143959 1339439.78</code></pre>
+</div>
+</div>
+<p>If we skip site rarefaction and instead include all locations within a cluster of maximum diameter deterministically, a subsample built on a given starting location could include any number of sites above the minimum threshold (here, <code>nMin = 3</code>, the default). The first replicate in this example contains 17 sites.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>nnAllSites <span class="ot">&lt;-</span> <span class="fu">clustr</span>(<span class="at">dat =</span> bivalves, </span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>                     <span class="at">xy =</span> xyCell, </span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">iter =</span> <span class="dv">500</span>,</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">distMax =</span> <span class="dv">3000</span>, <span class="co"># diameter = 2x the circular radius set above</span></span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">nMin =</span> <span class="dv">3</span>,</span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">crs =</span> prj</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>                     )</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>( nnAllSites[[<span class="dv">1</span>]] )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 17</code></pre>
+</div>
+</div>
+</section>
+<section id="latitudinal-subsampling" class="level3">
+<h3 class="anchored" data-anchor-id="latitudinal-subsampling">Latitudinal subsampling</h3>
+<p>Many biological and environmental variables of interest vary characteristically with latitude. Hence, depending on research question it may be exigent to control for latitudinal differences between items of comparison, e.g.&nbsp;occurrence data from a time step with predominantly low-latitude fossil localities vs.&nbsp;a time step with more mid-latitude localities.</p>
+<p>The <code>bandit()</code> function returns subsamples of a given site quota within latitudinal bands of a given bin resolution/width. Optionally, the function will ignore hemisphere differences and consider absolute latitude. The <code>iter</code> argument in <code>bandit()</code> specifies the number of subsamples to take within each band, rather than the total number globally. No subsamples are returned in bands containing fewer than <code>nSite</code> localities.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>bandLocs <span class="ot">&lt;-</span> <span class="fu">bandit</span>(<span class="at">dat =</span> bivalves,</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>                   <span class="at">xy =</span> xyCell,</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>                   <span class="at">iter =</span> <span class="dv">100</span>, <span class="at">nSite =</span> <span class="dv">12</span>, </span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>                   <span class="at">bin =</span> <span class="dv">20</span>, <span class="co"># interval width in degrees</span></span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>                   <span class="at">crs =</span> prj</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>                   <span class="co"># ,absLat = TRUE # optional</span></span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>                   )</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(bandLocs[[<span class="dv">1</span>]]) <span class="co"># number of sites in one subsampled band</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 12</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">length</span>(bandLocs) <span class="co"># number of subsamples, tallied across all bands</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 500</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(<span class="fu">names</span>(bandLocs)) <span class="co"># latitudinal degrees of subsampled intervals</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "[-50,-30)" "[-10,10)"  "[10,30)"   "[30,50)"   "[50,70)"  </code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="analysis-on-subsampled-data" class="level2">
+<h2 class="anchored" data-anchor-id="analysis-on-subsampled-data">Analysis on subsampled data</h2>
+<p>The <code>sdSumry()</code> function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. <code>sdSumry()</code> also tallies taxa in a sample and performs coverage-based rarefaction (if <code>quotaQ</code> supplied) and classical rarefaction (if <code>quotaN</code> supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by <code>iNEXT</code>).</p>
+<p>When coverage-based rarefaction is applied, the specified coverage level (<code>quotaQ</code>) should be appropriate for the estimated coverage of the original sample. Any requested quota greater than empirically available will require diversity extrapolation. <code>sdSumry()</code> returns the estimated sample coverage whenever coverage-based rarefaction is applied. Also note, homogeneous evenness is an underlying assumption for fair comparisons of coverage-based rarefaction diversity estimates. To help check this assumption, <code>sdSumry()</code> also returns Pielou’s J evenness metric whenever coverage-based rarefaction is applied. Evenness metrics are an area of ongoing theoretical debate and methodological development in ecology, and the use of Pielou’s J in <code>divvy</code> is a reflection of this metrics’ widespread use rather than a singular endorsement. If J estimates vary widely between time intervals or other categories of comparison, it is worth investigating evenness differences in more nuanced detail, for instance by calculating a variety of metrics.</p>
+<p>Compare the summary data from the original dataset vs.&nbsp;a single spatial subsample. First consider the summary of spatial metrics. The geographic dispersion of <code>bivalves</code> occurrences is enormous—this in itself indicates spatial standardisation is necessary to derive meaningful biological metrics. When we compare diversity estimates from the global vs.&nbsp;spatially-subsampled dataset, richness estimates are much higher for the global dataset, regardless of rarefaction method. This result demonstrates the species–area effect described in the introduction: even when rarefaction is applied to the same quota or coverage level, diversity estimates are larger for datasets with greater spatial coverage, because rarefaction fails to control spatial turnover in diversity.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>unsamp <span class="ot">&lt;-</span> <span class="fu">sdSumry</span>(<span class="at">dat =</span> bivalves, </span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>                  <span class="at">taxVar =</span> <span class="st">'genus'</span>,</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>                  <span class="at">collections =</span> <span class="st">'collection_no'</span>,</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>                  <span class="at">xy =</span> xyCell,</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>                  <span class="at">quotaQ =</span> <span class="fl">0.8</span>, <span class="at">quotaN =</span> <span class="dv">100</span>,</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>                  <span class="at">omitDom =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>                  <span class="at">crs =</span> prj)</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>unsamp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  nColl nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist
+1   863 3061  157 -434404.9   1647720 137.4159      28917.12     11375.07
+  minSpanTree     SCOR nTax  evenness coverage  SQSdiv SQSlow95 SQSupr95
+1    93349.91 20.64401  550 0.9061343   0.9414 323.015 310.6638 335.3662
+     CRdiv  CRlow95  CRupr95
+1 470.9424 454.3334 487.5515</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>samp1 <span class="ot">&lt;-</span> <span class="fu">sdSumry</span>(<span class="at">dat =</span> circOccs[[<span class="dv">1</span>]], </span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>                 <span class="at">taxVar =</span> <span class="st">'genus'</span>,</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>                 <span class="at">collections =</span> <span class="st">'collection_no'</span>,</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>                 <span class="at">xy =</span> xyCell,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>                 <span class="at">quotaQ =</span> <span class="fl">0.8</span>, <span class="at">quotaN =</span> <span class="dv">100</span>, </span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>                 <span class="at">omitDom =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>                 <span class="at">crs =</span> prj)</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a>samp1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  nColl nOcc nLoc centroidX centroidY latRange greatCircDist meanPairDist
+1   134  442   12  -7027292   4139440 10.25901      1612.452     779.4877
+  minSpanTree     SCOR nTax  evenness coverage  SQSdiv SQSlow95 SQSupr95
+1    2648.528 46.01033  164 0.9572183   0.8704 136.402 123.5963 149.2078
+     CRdiv CRlow95  CRupr95
+1 219.8183 190.056 249.5806</code></pre>
+</div>
+</div>
+<p>Iterative spatial subsampling addresses this issue in that it can control for <em>beta</em> diversity in global occurrence datasets. Even though any individual subsample includes only a fraction of the total occurrences, all data can contribute to analyses through repeated subsampling. Ecological variables calculated on any given subsample are directly comparable to those from other subsamples on the same dataset or a comparison dataset (e.g.&nbsp;a different time step or habitat type). The code chunk below demonstrates how to calculate summary statistics over all subsamples of Pliocene bivalve occurrences. The median taxon count in a 1500km-radius subsample is 162, with an interquartile range of 126–183 taxa. This range can be interpreted loosely as primary regional variation in estimated palaeodiversity.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="co"># warning - it's slow to rarefy diversity for hundreds of subsamples!</span></span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a><span class="co"># this code chunk skips it for quick demonstration purposes</span></span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>sampsMeta <span class="ot">&lt;-</span> <span class="fu">sdSumry</span>(<span class="at">dat =</span> circOccs, </span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>                     <span class="at">taxVar =</span> <span class="st">'genus'</span>,</span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>                     <span class="at">collections =</span> <span class="st">'collection_no'</span>,</span>
+<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>                     <span class="at">xy =</span> xyCell,</span>
+<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>                     <span class="at">crs =</span> prj</span>
+<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>                     )</span>
+<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a><span class="fu">quantile</span>(sampsMeta<span class="sc">$</span>nTax, <span class="fu">c</span>(<span class="fl">0.25</span>, <span class="fl">0.5</span>, <span class="fl">0.75</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>25% 50% 75% 
+126 162 183 </code></pre>
+</div>
+</div>
+</section>
+<section id="references" class="level2">
+<h2 class="anchored" data-anchor-id="references">References</h2>
+<p>Alroy, John. 2010. “The Shifting Balance of Diversity Among Major Marine Animal Groups.” Science 329 (5996): 1191–94. https://doi.org/10.1126/science.1189910. Alroy, John. 2014. “Accurate and Precise Estimates of Origination and Extinction Rates.” Paleobiology 40 (3): 374–97. https://doi.org/10.1666/13036. Alroy, John, Martin Aberhan, David J Bottjer, Michael Foote, Franz T Fürsich, Peter J Harries, Austin J W Hendy, et al.&nbsp;2008. “Phanerozoic Trends in the Global Diversity of Marine Invertebrates.” Journal Article. Science 321 (5885): 97–100. https://doi.org/10.1126/science.1156963. Antell, Gawain T, Roger BJ Benson, and Erin E Saupe. accepted. “Spatial Standardization of Taxon Occurrence Data—a Call to Action.” Journal Article. Paleobiology, accepted. https://doi.org/10.31223/X5997Z. Antell, Gawain T, Wolfgang Kiessling, Martin Aberhan, and Erin E Saupe. 2020. “Marine Biodiversity and Geographic Distributions Are Independent on Large Scales.” Journal Article. Current Biology 30 (1): 115–21. https://doi.org/10.1016/j.cub.2019.10.065. Benson, Roger BJ, Richard Butler, Roger A Close, Erin Saupe, and Daniel L Rabosky. 2021. “Biodiversity Across Space and Time in the Fossil Record.” Current Biology 31 (19): R1225–36. https://doi.org/10.1016/j.cub.2021.07.071. Chao, Anne, and Lou Jost. 2012. “Coverage-Based Rarefaction and Extrapolation: Standardizing Samples by Completeness Rather Than Size.” Ecology 93 (12): 2533–47. https://doi.org/10.1890/11-1952.1. Close, Roger A, Roger B J Benson, Erin E Saupe, Michael E Clapham, and Richard J Butler. 2020. “The Spatial Structure of Phanerozoic Marine Animal Diversity.” Journal Article. Science 368 (6489): 420–24. https://doi.org/10.1126/science.aay8309. Close, Roger A, Roger B J Benson, Paul Upchurch, and Richard J Butler. 2017. “Controlling for the Species-Area Effect Supports Constrained Long-Term Mesozoic Terrestrial Vertebrate Diversification.” Journal Article. Nature Communications 8. https://doi.org/10.1038/ncomms15381.</p>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>If vector and raster data are new concepts, a well-curated resource for learning the essentials of working with spatial data in R is <a href="https://rspatial.org/spatial/2-spatialdata.html">rspatial.org</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

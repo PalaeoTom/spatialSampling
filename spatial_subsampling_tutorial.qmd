@@ -1,25 +1,11 @@
 ---
-title: "Spatial subsampling tutorial"
-author: "G. T. Antell"
-date: "`r format(Sys.time(), '%d %B %Y')`"
-output: rmarkdown::html_vignette
-bibliography: vignette-refs.bib
-vignette: >
-  %\VignetteIndexEntry{Spatial subsampling tutorial}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+title: "Spatial subsampling using divvy"
+author: Gawain T. Antell. Adapted by Thomas J. Smith
+format: html
+editor: visual
 ---
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = FALSE,
-  comment = "#>"
-)
-```
-
 ## Contents
-
--   Why to subsample spatially
 
 -   Prepare Paleobiology Database records
 
@@ -38,18 +24,6 @@ knitr::opts_chunk$set(
 -   References
 
 This document introduces rationale for spatial subsampling and covers common use cases for `divvy` functions, including example R code. Sections below discuss ways to format data, implement three different subsampling routines, and calculate common biodiversity metrics.
-
-For a more comprehensive review of spatial subsampling theory, applications in paleobiology and ecology, and implementation in the `divvy` package, refer to @Antell2023, 'Spatial standardization of taxon occurrence data---a call to action'.
-
-## Why to subsample spatially
-
-Biodiversity measures, whether quantified from fossil or extant data, reflect the outcome of three types of processes: 1. the biological processes the measurements aim to capture, 2. stochastic processes that generate random error, and 3. observation processes, such as the distribution of collecting effort intensity. Compared to neontological data, observation densities of palaeontological data reflect the additional contributions of taphonomy (decay and preservation processes) and sedimentation (burial and lithification processes). The term 'sampling' is used herein to refer to the full suite of influences on how many of the fossil taxa that lived in a place are recorded as fossil occurrences there. Given the large number of processes involved in sampling fossils, it is unsurprising that for many palaeo-occurrence datasets, the combined effect size of unexplained error and variable observation probabilities on biodiversity parameter estimates is greater than that of true biological processes from the past.
-
-The relative strength of sampling structure compared to biological structure is a well-known issue in quantitative palaeobiology and therefore has received considerable attention. The most mainstream method of standardising sampling in biodiversity data (fossil or extant) is rarefaction, a genre of statistical method that resamples taxon occurrences to a given threshold of sampling completeness. 'Classical' rarefaction uses cumulative specimen count as a proxy of sampling completeness, while 'coverage-based' rarefaction estimates the cumulative coverage of a taxon frequency distribution curve as a proxy [@Alroy2010; @Chao2012]. Examples of both types of rarefaction abound in recent palaeobiology literature. Rarefaction largely succeeds in producing diversity estimates corrected for sampling differences between sites, i.e. diversity estimates at discrete sites (*alpha* diversity) that can be compared fairly. However, challenges arise in comparing diversity between times or regions that contain multiple sites.
-
-Taxonomic composition turns over from one geographic location to another. The amount of this turnover (*beta* diversity) generally increases with distance, a relationship known as the species--area effect. In practical terms, the greater the spatial dispersion or area of sampling, the more taxa will tend to be recovered. Sampling processes control both the dispersion and area of localities with fossil data, which makes it essential for palaeobiologists to account for spatial coverage of sampling when conducting biodiversity analyses, regardless of the use of rarefaction [@Benson2021]. Without standardising sampling in a spatial context, any estimates of biodiversity parameters will be an indiscernible mix of true historic values conflated with the amount of observation of those values.
-
-`divvy` implements several spatial subsampling methods that control both the geographic dispersion and area of taxon occurrences, so analysts can make fairer estimates of biodiversity parameters between regions or through time. Each method is iterative, drawing many, comparable spatial replicates.
 
 ## Prepare Paleobiology Database records
 
@@ -300,3 +274,14 @@ sampsMeta <- sdSumry(dat = circOccs,
                      )
 quantile(sampsMeta$nTax, c(0.25, 0.5, 0.75))
 ```
+
+## References
+Alroy, John. 2010. “The Shifting Balance of Diversity Among Major Marine Animal Groups.” Science 329 (5996): 1191–94. https://doi.org/10.1126/science.1189910.
+Alroy, John. 2014. “Accurate and Precise Estimates of Origination and Extinction Rates.” Paleobiology 40 (3): 374–97. https://doi.org/10.1666/13036.
+Alroy, John, Martin Aberhan, David J Bottjer, Michael Foote, Franz T Fürsich, Peter J Harries, Austin J W Hendy, et al. 2008. “Phanerozoic Trends in the Global Diversity of Marine Invertebrates.” Journal Article. Science 321 (5885): 97–100. https://doi.org/10.1126/science.1156963.
+Antell, Gawain T, Roger BJ Benson, and Erin E Saupe. accepted. “Spatial Standardization of Taxon Occurrence Data—a Call to Action.” Journal Article. Paleobiology, accepted. https://doi.org/10.31223/X5997Z.
+Antell, Gawain T, Wolfgang Kiessling, Martin Aberhan, and Erin E Saupe. 2020. “Marine Biodiversity and Geographic Distributions Are Independent on Large Scales.” Journal Article. Current Biology 30 (1): 115–21. https://doi.org/10.1016/j.cub.2019.10.065.
+Benson, Roger BJ, Richard Butler, Roger A Close, Erin Saupe, and Daniel L Rabosky. 2021. “Biodiversity Across Space and Time in the Fossil Record.” Current Biology 31 (19): R1225–36. https://doi.org/10.1016/j.cub.2021.07.071.
+Chao, Anne, and Lou Jost. 2012. “Coverage-Based Rarefaction and Extrapolation: Standardizing Samples by Completeness Rather Than Size.” Ecology 93 (12): 2533–47. https://doi.org/10.1890/11-1952.1.
+Close, Roger A, Roger B J Benson, Erin E Saupe, Michael E Clapham, and Richard J Butler. 2020. “The Spatial Structure of Phanerozoic Marine Animal Diversity.” Journal Article. Science 368 (6489): 420–24. https://doi.org/10.1126/science.aay8309.
+Close, Roger A, Roger B J Benson, Paul Upchurch, and Richard J Butler. 2017. “Controlling for the Species-Area Effect Supports Constrained Long-Term Mesozoic Terrestrial Vertebrate Diversification.” Journal Article. Nature Communications 8. https://doi.org/10.1038/ncomms15381.
