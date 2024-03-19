@@ -1,0 +1,302 @@
+---
+title: "Spatial subsampling tutorial"
+author: "G. T. Antell"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: rmarkdown::html_vignette
+bibliography: vignette-refs.bib
+vignette: >
+  %\VignetteIndexEntry{Spatial subsampling tutorial}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = FALSE,
+  comment = "#>"
+)
+```
+
+## Contents
+
+-   Why to subsample spatially
+
+-   Prepare Paleobiology Database records
+
+-   Subsampling examples
+
+    -   Circular subsampling
+
+    -   PBDB collections, references, and duplicate entries
+
+    -   Nearest-neighbour subsampling
+
+    -   Latitudinal subsampling
+
+-   Analysis on subsampled data
+
+-   References
+
+This document introduces rationale for spatial subsampling and covers common use cases for `divvy` functions, including example R code. Sections below discuss ways to format data, implement three different subsampling routines, and calculate common biodiversity metrics.
+
+For a more comprehensive review of spatial subsampling theory, applications in paleobiology and ecology, and implementation in the `divvy` package, refer to @Antell2023, 'Spatial standardization of taxon occurrence data---a call to action'.
+
+## Why to subsample spatially
+
+Biodiversity measures, whether quantified from fossil or extant data, reflect the outcome of three types of processes: 1. the biological processes the measurements aim to capture, 2. stochastic processes that generate random error, and 3. observation processes, such as the distribution of collecting effort intensity. Compared to neontological data, observation densities of palaeontological data reflect the additional contributions of taphonomy (decay and preservation processes) and sedimentation (burial and lithification processes). The term 'sampling' is used herein to refer to the full suite of influences on how many of the fossil taxa that lived in a place are recorded as fossil occurrences there. Given the large number of processes involved in sampling fossils, it is unsurprising that for many palaeo-occurrence datasets, the combined effect size of unexplained error and variable observation probabilities on biodiversity parameter estimates is greater than that of true biological processes from the past.
+
+The relative strength of sampling structure compared to biological structure is a well-known issue in quantitative palaeobiology and therefore has received considerable attention. The most mainstream method of standardising sampling in biodiversity data (fossil or extant) is rarefaction, a genre of statistical method that resamples taxon occurrences to a given threshold of sampling completeness. 'Classical' rarefaction uses cumulative specimen count as a proxy of sampling completeness, while 'coverage-based' rarefaction estimates the cumulative coverage of a taxon frequency distribution curve as a proxy [@Alroy2010; @Chao2012]. Examples of both types of rarefaction abound in recent palaeobiology literature. Rarefaction largely succeeds in producing diversity estimates corrected for sampling differences between sites, i.e. diversity estimates at discrete sites (*alpha* diversity) that can be compared fairly. However, challenges arise in comparing diversity between times or regions that contain multiple sites.
+
+Taxonomic composition turns over from one geographic location to another. The amount of this turnover (*beta* diversity) generally increases with distance, a relationship known as the species--area effect. In practical terms, the greater the spatial dispersion or area of sampling, the more taxa will tend to be recovered. Sampling processes control both the dispersion and area of localities with fossil data, which makes it essential for palaeobiologists to account for spatial coverage of sampling when conducting biodiversity analyses, regardless of the use of rarefaction [@Benson2021]. Without standardising sampling in a spatial context, any estimates of biodiversity parameters will be an indiscernible mix of true historic values conflated with the amount of observation of those values.
+
+`divvy` implements several spatial subsampling methods that control both the geographic dispersion and area of taxon occurrences, so analysts can make fairer estimates of biodiversity parameters between regions or through time. Each method is iterative, drawing many, comparable spatial replicates.
+
+## Prepare Paleobiology Database records
+
+We begin by loading the `divvy` package itself, and note its geospatial package dependencies `units`, `sf`, `terra`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction.
+
+```{r setup, message=FALSE}
+library(divvy) 
+library(units)
+library(sf)
+library(terra)
+library(vegan)
+library(iNEXT)
+```
+
+`divvy` includes the attached dataset `bivalves`, a download of fossil occurrences from the [Paleobiology Database](https://paleobiodb.org/) (PBDB) that has been subset to a few relevant columns and minimally cleaned. `bivalves` contains ca. 8,000 (palaeo)coordinates and identifications for ca. 500 marine bivalve genera from the Pliocene. For more information about the dataset, query `?bivalves`.
+
+The attached dataset is provided only as an example for working with PBDB-structured occurrence records; formal analyses would be wise to vet downloaded data more rigorously, including revising taxonomy, time bin assignments, and environmental classifications. The `fossilbrush` package provides a palette of tools to help clean PBDB data.
+
+```{r attached data}
+data(bivalves)
+head(bivalves)
+nrow(bivalves)
+length(unique(bivalves$genus))
+```
+
+The latitude-longitude coordinates in the PBDB come from many different studies, which means the precision and accuracy vary across records. Fossils collected from the same locality may be reported with different coordinates due purely to different GPS equipment, mapping, or decimal rounding, for example. The spatial subsampling procedures below put great weight on the number of unique localities in a region, so it is important to avoid inflating the site number artificially.
+
+One standard way to smooth over slight discrepancies in occurrence positions is to convert point coordinates ('vector' spatial data) to grid cells ('raster' spatial data)[^1]. Effectively, one lays a web over a study region and records the position of polygons ('grid cells') in which points fall, rather than the original xy point coordinates. An additional advantage of raster over vector data is the tremendous increase in efficiency of spatial computations.
+
+[^1]: If vector and raster data are new concepts, a well-curated resource for learning the essentials of working with spatial data in R is [rspatial.org](https://rspatial.org/spatial/2-spatialdata.html).
+
+Palaeobiologists often convert abundance counts to binary presence-absence data for taxon occurrences in grid cells. This practice is especially common for PBDB data because abundance information is usually non-standard, if it is recorded at all. (Read below for further notes about duplicate taxon occurrences.)
+
+Many PBDB analyses are also global in extent, which makes the choice of [coordinate reference system](https://rspatial.org/spatial/6-crs.html) for the raster grid important. The areas and shapes of grid cells at the poles vs. the equator can differ widely with certain reference systems or map projections. The code below converts latitude-longitude coordinates to the Equal Earth reference system, an equal-area projection for world maps. Another option of friendly raster grid system is the is the `icosa` package, developed by palaeobiologist Ádám Kocsis, which creates tessellations of pentagons and hexagons. The polygons are approximately equal in area and shape across the globe. The spatial resolution of the grid is controlled by arguments in the `hexagrid` function.
+
+```{r rasterise}
+# initialise Equal Earth projected coordinates
+rWorld <- rast()
+prj <- 'EPSG:8857'
+rPrj <- project(rWorld, prj, res = 200000) # 200,000m is approximately 2 degrees
+values(rPrj) <- 1:ncell(rPrj)
+
+# coordinate column names for the current and target coordinate reference system
+xyCartes <- c('paleolng','paleolat')
+xyCell   <- c('cellX','cellY')
+
+# retrieve coordinates of raster cell centroids
+llOccs <- vect(bivalves, geom = xyCartes, crs = 'epsg:4326')
+prjOccs <- project(llOccs, prj)
+bivalves$cell <- cells(rPrj, prjOccs)[,'cell']
+bivalves[, xyCell] <- xyFromCell(rPrj, bivalves$cell)
+```
+
+We can inspect the spatial distribution of data by converting occurrence points to `spatial features` (a class that contains coordinate system information) and plotting them against a basic world map, supplied here from the `rnaturalearth` and `rnaturalearthdata` packages.
+
+```{r map data, fig.width=6, fig.align='center', message=FALSE}
+occUniq <- uniqify(bivalves, xyCell)
+ptsUniq <- st_as_sf(occUniq, coords = xyCell, crs = prj)
+
+library(rnaturalearth)
+library(rnaturalearthdata)
+library(ggplot2) # for plot visualisation
+world <- ne_countries(scale = "medium", returnclass = "sf")
+worldP <- ggplot(data = world) +
+  theme_bw() +
+  geom_sf() +
+  geom_sf(data = ptsUniq, shape = 17, color = 'blue')
+
+plot(worldP)
+```
+
+## Subsampling examples
+
+`divvy` offers three approaches to spatially subsample data:
+
+-   `cookies`: Imposes a radial constraint on the spatial bounds of a subsample and standardises area by rarefying the number of localities
+
+-   `clustr`: Aggregates sites that are nearest neighbours (connecting them with a minimum spanning tree) to impose a maximum diameter on the spatial bounds of a subsample, and optionally rarefies localities
+
+-   `bandit`: Rarefies the number of localities within bands of equal latitude
+
+### Circular subsampling
+
+First let's apply circular subsampling, which both constrains the spatial bounds of a sample to a specified radius from a random start point and standardises the spatial area of a sample to a specified number of sites. (Recall that sites were allocated to equal-area polygons in the preceding section.) The radius (1500 km) and the numbers of sites (n = 12) and iterations (n = 500) are specified here to match the subsampling parameters in the global analysis of @Antell2020.
+
+```{r circ subsample}
+set.seed(1)
+circLocs <- cookies(dat = bivalves,  
+                    xy = xyCell,
+                    iter = 500, 
+                    nSite = 12, 
+                    r = 1500, # radial distance in km
+                    weight = TRUE, # probabilistically aggregate subsampling sites
+                    crs = prj, # Equal Earth projection
+                    output = 'locs')
+length(circLocs)
+circLocs[[1]]
+```
+
+Subsamples are returned as elements in a `list` of length `iter`. If `output = "locs"` (default), each element is a `data.frame` of coordinates for the `nSite` sites included in a subsample. This output may be useful as an intermediate object on which to run custom functions that calculate ecological parameters of interest, for instance metrics of spatial connectedness among fossil sites. We can also use location output to explore where the subsample plots on our earlier map. This subsample happens to fall along the East and Gulf Coasts of North America.
+
+```{r map subsample, fig.width=6, fig.align='center'}
+# over-plot the subsample locations
+smplPts <- st_as_sf(circLocs[[1]], coords = xyCell, crs = prj)
+worldP +
+  geom_sf(data = smplPts, shape = 17, color = 'red')
+```
+
+Now note that the first code chunk in this section set the `weight` argument of `cookies()` to `TRUE`. Weighting is designed to cluster subsample sites more compactly than random selection; that is, distant points will tend to be left out. Weighting is achieved by increasing the probability of drawing a site the closer it falls to the central occurrence point ('seed cell') in a given subsample. The seed cell is always included in weighted subsamples (but not necessarily in unweighted ones) and corresponds to the first row listed in the output. To visibilise the weighted subsample method further, let's extract the seed location and manually plot the circular constraint around it.
+
+```{r count pool size, fig.width=6, fig.align='center'}
+cntr <- smplPts[1,]
+# distances inferred to be meters based on lat-long coord system
+r <- 1500
+buf <- st_buffer(cntr, dist = r*1000)
+
+# over-plot subsample boundary region and included sites
+worldP +
+  geom_sf(data = smplPts, shape = 17, color = 'red') +
+  geom_sf(data = buf, fill = NA, linewidth = 1, color = 'red')
+```
+
+This inspection also reveals that there happen to be 14 sites in the region from which to draw a subsample of 12.
+
+```{r tally pool size}
+inBuf <- st_intersects(ptsUniq, buf, sparse = FALSE) 
+sum(inBuf)
+```
+
+As demonstrated above, the location-type output of `divvy` subsampling functions can be useful in certain cases; however, more often researchers will want to retrieve taxon records. Changing `output` from `"locs"` to `"full"`, each element of the returned object now contains the subset of occurrence rows from `bivalves` located at the sites in a subsample. This output will be useful for analysis in the final vignette section below.
+
+```{r circ subsample variation}
+set.seed(7)
+# same parameter values as above except for 'output'
+circOccs <- cookies(dat = bivalves, 
+                    xy = xyCell, 
+                    iter = 500, 
+                    nSite = 12, 
+                    r = 1500, 
+                    weight = TRUE, 
+                    crs = prj,
+                    output = 'full')
+head( circOccs[[8]] )
+```
+
+### PBDB collections, references, and duplicate entries
+
+Data fed into `divvy` subsampling functions can contain duplicate taxon--location records, which are common from the collections-based format of PBDB data entry. For instance, the subsample output printed above shows *Argopecten* twice at the same coordinates. The duplicates stem from different collections (#51881 and #51887). In the previous section we standardised spatial dispersion and area, but at this point we could rarefy the number of collections or references, too, as a standardisation for sampling effort.
+
+The study that developed the circular buffer approach for regional subsampling (implemented with `cookies()`) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells [@Antell2020]. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts [@Alroy2008]. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).
+
+In contrast, the study that developed the nearest-neighbour subsampling approach (described below) rarefied collections within references, following @Alroy2014, but avoided rarefying sites/cells [@Close2017]. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The `divvy` diversity summary function (`sdSumry()`) and the most recent study to use nearest-neighbour subsamples [@Close2020] call on the `iNEXT` implementation of coverage-based richness estimation, which ignores the PBDB collections/references data structure. Therefore, users wishing to to rarefy collections and/or references should write custom richness estimation scripts or adapt Alroy's Perl scripts.
+
+To filter out duplicate taxon--location records from a datset, thereby reducing object size and saving memory, `divvy` offers the `uniqify()` function. Omitting duplicate occurrences from `bivalves` removes more than 5,000 rows.
+
+```{r unique occs}
+bivUniq <- uniqify(bivalves, taxVar = 'genus', xyCell)
+nrow(bivUniq)
+```
+
+### Nearest-neighbour subsampling
+
+As mentioned in the preceding section, papers to date that analysed spatial subsamples constructed with the nearest-neighbour method constrained only the spatial dispersion and not cumulative area or number of sites [@Close2017; @Close2020]. For backwards compatibility with these originator publications, the `clustr()` function contains an option to turn off site rarefaction (argument `nSite = NULL`). However, depending on study design it may well be prudent to standardise the area/number of sites when using the nearest-neighbour method, as is mandated in the circular subsampling method. To set the site quota for either method, use the `nSite` argument.
+
+```{r MST subsample}
+set.seed(2)
+nnLocs <- clustr(dat = bivalves, 
+                 xy = xyCell, 
+                 iter = 500, 
+                 distMax = 3000, # diameter = 2x the circular radius set above
+                 nSite = 12,
+                 crs = prj
+                 )
+nnLocs[[1]]
+```
+
+If we skip site rarefaction and instead include all locations within a cluster of maximum diameter deterministically, a subsample built on a given starting location could include any number of sites above the minimum threshold (here, `nMin = 3`, the default). The first replicate in this example contains 17 sites.
+
+```{r MST all sites}
+set.seed(2)
+nnAllSites <- clustr(dat = bivalves, 
+                     xy = xyCell, 
+                     iter = 500,
+                     distMax = 3000, # diameter = 2x the circular radius set above
+                     nMin = 3,
+                     crs = prj
+                     )
+nrow( nnAllSites[[1]] )
+```
+
+### Latitudinal subsampling
+
+Many biological and environmental variables of interest vary characteristically with latitude. Hence, depending on research question it may be exigent to control for latitudinal differences between items of comparison, e.g. occurrence data from a time step with predominantly low-latitude fossil localities vs. a time step with more mid-latitude localities.
+
+The `bandit()` function returns subsamples of a given site quota within latitudinal bands of a given bin resolution/width. Optionally, the function will ignore hemisphere differences and consider absolute latitude. The `iter` argument in `bandit()` specifies the number of subsamples to take within each band, rather than the total number globally. No subsamples are returned in bands containing fewer than `nSite` localities.
+
+```{r lat subsample}
+bandLocs <- bandit(dat = bivalves,
+                   xy = xyCell,
+                   iter = 100, nSite = 12, 
+                   bin = 20, # interval width in degrees
+                   crs = prj
+                   # ,absLat = TRUE # optional
+                   )
+nrow(bandLocs[[1]]) # number of sites in one subsampled band
+length(bandLocs) # number of subsamples, tallied across all bands
+unique(names(bandLocs)) # latitudinal degrees of subsampled intervals
+```
+
+## Analysis on subsampled data
+
+The `sdSumry()` function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. `sdSumry()` also tallies taxa in a sample and performs coverage-based rarefaction (if `quotaQ` supplied) and classical rarefaction (if `quotaN` supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by `iNEXT`).
+
+When coverage-based rarefaction is applied, the specified coverage level (`quotaQ`) should be appropriate for the estimated coverage of the original sample. Any requested quota greater than empirically available will require diversity extrapolation. `sdSumry()` returns the estimated sample coverage whenever coverage-based rarefaction is applied. Also note, homogeneous evenness is an underlying assumption for fair comparisons of coverage-based rarefaction diversity estimates. To help check this assumption, `sdSumry()` also returns Pielou's J evenness metric whenever coverage-based rarefaction is applied. Evenness metrics are an area of ongoing theoretical debate and methodological development in ecology, and the use of Pielou's J in `divvy` is a reflection of this metrics' widespread use rather than a singular endorsement. If J estimates vary widely between time intervals or other categories of comparison, it is worth investigating evenness differences in more nuanced detail, for instance by calculating a variety of metrics.
+
+Compare the summary data from the original dataset vs. a single spatial subsample. First consider the summary of spatial metrics. The geographic dispersion of `bivalves` occurrences is enormous---this in itself indicates spatial standardisation is necessary to derive meaningful biological metrics. When we compare diversity estimates from the global vs. spatially-subsampled dataset, richness estimates are much higher for the global dataset, regardless of rarefaction method. This result demonstrates the species--area effect described in the introduction: even when rarefaction is applied to the same quota or coverage level, diversity estimates are larger for datasets with greater spatial coverage, because rarefaction fails to control spatial turnover in diversity.
+
+```{r meta data}
+unsamp <- sdSumry(dat = bivalves, 
+                  taxVar = 'genus',
+                  collections = 'collection_no',
+                  xy = xyCell,
+                  quotaQ = 0.8, quotaN = 100,
+                  omitDom = TRUE,
+                  crs = prj)
+unsamp
+
+samp1 <- sdSumry(dat = circOccs[[1]], 
+                 taxVar = 'genus',
+                 collections = 'collection_no',
+                 xy = xyCell,
+                 quotaQ = 0.8, quotaN = 100, 
+                 omitDom = TRUE,
+                 crs = prj)
+samp1
+```
+
+Iterative spatial subsampling addresses this issue in that it can control for *beta* diversity in global occurrence datasets. Even though any individual subsample includes only a fraction of the total occurrences, all data can contribute to analyses through repeated subsampling. Ecological variables calculated on any given subsample are directly comparable to those from other subsamples on the same dataset or a comparison dataset (e.g. a different time step or habitat type). The code chunk below demonstrates how to calculate summary statistics over all subsamples of Pliocene bivalve occurrences. The median taxon count in a 1500km-radius subsample is 162, with an interquartile range of 126--183 taxa. This range can be interpreted loosely as primary regional variation in estimated palaeodiversity.
+
+```{r summary over subsamples}
+# warning - it's slow to rarefy diversity for hundreds of subsamples!
+# this code chunk skips it for quick demonstration purposes
+sampsMeta <- sdSumry(dat = circOccs, 
+                     taxVar = 'genus',
+                     collections = 'collection_no',
+                     xy = xyCell,
+                     crs = prj
+                     )
+quantile(sampsMeta$nTax, c(0.25, 0.5, 0.75))
+```
