@@ -3,29 +3,12 @@ title: "Spatial subsampling using divvy"
 author: Gawain T. Antell. Adapted by Thomas J. Smith
 format: html
 editor: visual
+bibliography: habitat-case-study-refs.bib
 ---
-
-## Contents
-
--   Prepare Paleobiology Database records
-
--   Subsampling examples
-
-    -   Circular subsampling
-
-    -   PBDB collections, references, and duplicate entries
-
-    -   Nearest-neighbour subsampling
-
-    -   Latitudinal subsampling
-
--   Analysis on subsampled data
-
--   References
 
 This document introduces rationale for spatial subsampling and covers common use cases for `divvy` functions, including example R code. Sections below discuss ways to format data, implement three different subsampling routines, and calculate common biodiversity metrics.
 
-## Prepare Paleobiology Database records
+## 1. Prepare Paleobiology Database records
 
 We begin by loading the `divvy` package itself, and note its geospatial package dependencies `units`, `sf`, `terra`, and `vegan`, and the `iNEXT` package for taxonomic richness rarefaction.
 
@@ -95,7 +78,7 @@ worldP <- ggplot(data = world) +
 plot(worldP)
 ```
 
-## Subsampling examples
+## 2. Subsampling examples
 
 `divvy` offers three approaches to spatially subsample data:
 
@@ -105,7 +88,7 @@ plot(worldP)
 
 -   `bandit`: Rarefies the number of localities within bands of equal latitude
 
-### Circular subsampling
+### 2.1 Circular subsampling
 
 First let's apply circular subsampling, which both constrains the spatial bounds of a sample to a specified radius from a random start point and standardises the spatial area of a sample to a specified number of sites. (Recall that sites were allocated to equal-area polygons in the preceding section.) The radius (1500 km) and the numbers of sites (n = 12) and iterations (n = 500) are specified here to match the subsampling parameters in the global analysis of @Antell2020.
 
@@ -169,7 +152,7 @@ circOccs <- cookies(dat = bivalves,
 head( circOccs[[8]] )
 ```
 
-### PBDB collections, references, and duplicate entries
+### 2.2 PBDB collections, references, and duplicate entries
 
 Data fed into `divvy` subsampling functions can contain duplicate taxon--location records, which are common from the collections-based format of PBDB data entry. For instance, the subsample output printed above shows *Argopecten* twice at the same coordinates. The duplicates stem from different collections (#51881 and #51887). In the previous section we standardised spatial dispersion and area, but at this point we could rarefy the number of collections or references, too, as a standardisation for sampling effort.
 
@@ -184,7 +167,7 @@ bivUniq <- uniqify(bivalves, taxVar = 'genus', xyCell)
 nrow(bivUniq)
 ```
 
-### Nearest-neighbour subsampling
+### 2.3 Nearest-neighbour subsampling
 
 As mentioned in the preceding section, papers to date that analysed spatial subsamples constructed with the nearest-neighbour method constrained only the spatial dispersion and not cumulative area or number of sites [@Close2017; @Close2020]. For backwards compatibility with these originator publications, the `clustr()` function contains an option to turn off site rarefaction (argument `nSite = NULL`). However, depending on study design it may well be prudent to standardise the area/number of sites when using the nearest-neighbour method, as is mandated in the circular subsampling method. To set the site quota for either method, use the `nSite` argument.
 
@@ -214,7 +197,7 @@ nnAllSites <- clustr(dat = bivalves,
 nrow( nnAllSites[[1]] )
 ```
 
-### Latitudinal subsampling
+### 2.4 Latitudinal subsampling
 
 Many biological and environmental variables of interest vary characteristically with latitude. Hence, depending on research question it may be exigent to control for latitudinal differences between items of comparison, e.g. occurrence data from a time step with predominantly low-latitude fossil localities vs. a time step with more mid-latitude localities.
 
@@ -233,7 +216,7 @@ length(bandLocs) # number of subsamples, tallied across all bands
 unique(names(bandLocs)) # latitudinal degrees of subsampled intervals
 ```
 
-## Analysis on subsampled data
+## 3. Analysis on subsampled data
 
 The `sdSumry()` function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. `sdSumry()` also tallies taxa in a sample and performs coverage-based rarefaction (if `quotaQ` supplied) and classical rarefaction (if `quotaN` supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by `iNEXT`).
 
@@ -276,14 +259,5 @@ quantile(sampsMeta$nTax, c(0.25, 0.5, 0.75))
 ```
 
 
-## References
+## 4. References
 
-Alroy, John. 2010. “The Shifting Balance of Diversity Among Major Marine Animal Groups.” Science 329 (5996): 1191–94. https://doi.org/10.1126/science.1189910.
-Alroy, John. 2014. “Accurate and Precise Estimates of Origination and Extinction Rates.” Paleobiology 40 (3): 374–97. https://doi.org/10.1666/13036.
-Alroy, John, Martin Aberhan, David J Bottjer, Michael Foote, Franz T Fürsich, Peter J Harries, Austin J W Hendy, et al. 2008. “Phanerozoic Trends in the Global Diversity of Marine Invertebrates.” Journal Article. Science 321 (5885): 97–100. https://doi.org/10.1126/science.1156963.
-Antell, Gawain T, Roger BJ Benson, and Erin E Saupe. accepted. “Spatial Standardization of Taxon Occurrence Data—a Call to Action.” Journal Article. Paleobiology, accepted. https://doi.org/10.31223/X5997Z.
-Antell, Gawain T, Wolfgang Kiessling, Martin Aberhan, and Erin E Saupe. 2020. “Marine Biodiversity and Geographic Distributions Are Independent on Large Scales.” Journal Article. Current Biology 30 (1): 115–21. https://doi.org/10.1016/j.cub.2019.10.065.
-Benson, Roger BJ, Richard Butler, Roger A Close, Erin Saupe, and Daniel L Rabosky. 2021. “Biodiversity Across Space and Time in the Fossil Record.” Current Biology 31 (19): R1225–36. https://doi.org/10.1016/j.cub.2021.07.071.
-Chao, Anne, and Lou Jost. 2012. “Coverage-Based Rarefaction and Extrapolation: Standardizing Samples by Completeness Rather Than Size.” Ecology 93 (12): 2533–47. https://doi.org/10.1890/11-1952.1.
-Close, Roger A, Roger B J Benson, Erin E Saupe, Michael E Clapham, and Richard J Butler. 2020. “The Spatial Structure of Phanerozoic Marine Animal Diversity.” Journal Article. Science 368 (6489): 420–24. https://doi.org/10.1126/science.aay8309.
-Close, Roger A, Roger B J Benson, Paul Upchurch, and Richard J Butler. 2017. “Controlling for the Species-Area Effect Supports Constrained Long-Term Mesozoic Terrestrial Vertebrate Diversification.” Journal Article. Nature Communications 8. https://doi.org/10.1038/ncomms15381.

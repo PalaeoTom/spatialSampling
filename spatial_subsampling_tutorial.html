@@ -55,7 +55,26 @@ div.sourceCode
 @media screen {
 pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
-</style>
+/* CSS for citations */
+div.csl-bib-body { }
+div.csl-entry {
+  clear: both;
+}
+.hanging-indent div.csl-entry {
+  margin-left:2em;
+  text-indent:-2em;
+}
+div.csl-left-margin {
+  min-width:2em;
+  float:left;
+}
+div.csl-right-inline {
+  margin-left:2em;
+  padding-left:1em;
+}
+div.csl-indent {
+  margin-left: 2em;
+}</style>
 
 
 <script src="spatial_subsampling_tutorial_files/libs/clipboard/clipboard.min.js"></script>
@@ -101,24 +120,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<section id="contents" class="level2">
-<h2 class="anchored" data-anchor-id="contents">Contents</h2>
-<ul>
-<li><p>Prepare Paleobiology Database records</p></li>
-<li><p>Subsampling examples</p>
-<ul>
-<li><p>Circular subsampling</p></li>
-<li><p>PBDB collections, references, and duplicate entries</p></li>
-<li><p>Nearest-neighbour subsampling</p></li>
-<li><p>Latitudinal subsampling</p></li>
-</ul></li>
-<li><p>Analysis on subsampled data</p></li>
-<li><p>References</p></li>
-</ul>
 <p>This document introduces rationale for spatial subsampling and covers common use cases for <code>divvy</code> functions, including example R code. Sections below discuss ways to format data, implement three different subsampling routines, and calculate common biodiversity metrics.</p>
-</section>
 <section id="prepare-paleobiology-database-records" class="level2">
-<h2 class="anchored" data-anchor-id="prepare-paleobiology-database-records">Prepare Paleobiology Database records</h2>
+<h2 class="anchored" data-anchor-id="prepare-paleobiology-database-records">1. Prepare Paleobiology Database records</h2>
 <p>We begin by loading the <code>divvy</code> package itself, and note its geospatial package dependencies <code>units</code>, <code>sf</code>, <code>terra</code>, and <code>vegan</code>, and the <code>iNEXT</code> package for taxonomic richness rarefaction.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(divvy) </span>
@@ -204,7 +208,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 <section id="subsampling-examples" class="level2">
-<h2 class="anchored" data-anchor-id="subsampling-examples">Subsampling examples</h2>
+<h2 class="anchored" data-anchor-id="subsampling-examples">2. Subsampling examples</h2>
 <p><code>divvy</code> offers three approaches to spatially subsample data:</p>
 <ul>
 <li><p><code>cookies</code>: Imposes a radial constraint on the spatial bounds of a subsample and standardises area by rarefying the number of localities</p></li>
@@ -212,8 +216,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <li><p><code>bandit</code>: Rarefies the number of localities within bands of equal latitude</p></li>
 </ul>
 <section id="circular-subsampling" class="level3">
-<h3 class="anchored" data-anchor-id="circular-subsampling">Circular subsampling</h3>
-<p>First let’s apply circular subsampling, which both constrains the spatial bounds of a sample to a specified radius from a random start point and standardises the spatial area of a sample to a specified number of sites. (Recall that sites were allocated to equal-area polygons in the preceding section.) The radius (1500 km) and the numbers of sites (n = 12) and iterations (n = 500) are specified here to match the subsampling parameters in the global analysis of <span class="citation" data-cites="Antell2020">@Antell2020</span>.</p>
+<h3 class="anchored" data-anchor-id="circular-subsampling">2.1 Circular subsampling</h3>
+<p>First let’s apply circular subsampling, which both constrains the spatial bounds of a sample to a specified radius from a random start point and standardises the spatial area of a sample to a specified number of sites. (Recall that sites were allocated to equal-area polygons in the preceding section.) The radius (1500 km) and the numbers of sites (n = 12) and iterations (n = 500) are specified here to match the subsampling parameters in the global analysis of <span class="citation" data-cites="Antell2020">Antell et al. (<a href="#ref-Antell2020" role="doc-biblioref">2020</a>)</span>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">1</span>)</span>
 <span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>circLocs <span class="ot">&lt;-</span> <span class="fu">cookies</span>(<span class="at">dat =</span> bivalves,  </span>
@@ -318,10 +322,10 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 <section id="pbdb-collections-references-and-duplicate-entries" class="level3">
-<h3 class="anchored" data-anchor-id="pbdb-collections-references-and-duplicate-entries">PBDB collections, references, and duplicate entries</h3>
+<h3 class="anchored" data-anchor-id="pbdb-collections-references-and-duplicate-entries">2.2 PBDB collections, references, and duplicate entries</h3>
 <p>Data fed into <code>divvy</code> subsampling functions can contain duplicate taxon–location records, which are common from the collections-based format of PBDB data entry. For instance, the subsample output printed above shows <em>Argopecten</em> twice at the same coordinates. The duplicates stem from different collections (#51881 and #51887). In the previous section we standardised spatial dispersion and area, but at this point we could rarefy the number of collections or references, too, as a standardisation for sampling effort.</p>
-<p>The study that developed the circular buffer approach for regional subsampling (implemented with <code>cookies()</code>) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells <span class="citation" data-cites="Antell2020">[@Antell2020]</span>. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts <span class="citation" data-cites="Alroy2008">[@Alroy2008]</span>. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).</p>
-<p>In contrast, the study that developed the nearest-neighbour subsampling approach (described below) rarefied collections within references, following <span class="citation" data-cites="Alroy2014">@Alroy2014</span>, but avoided rarefying sites/cells <span class="citation" data-cites="Close2017">[@Close2017]</span>. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The <code>divvy</code> diversity summary function (<code>sdSumry()</code>) and the most recent study to use nearest-neighbour subsamples <span class="citation" data-cites="Close2020">[@Close2020]</span> call on the <code>iNEXT</code> implementation of coverage-based richness estimation, which ignores the PBDB collections/references data structure. Therefore, users wishing to to rarefy collections and/or references should write custom richness estimation scripts or adapt Alroy’s Perl scripts.</p>
+<p>The study that developed the circular buffer approach for regional subsampling (implemented with <code>cookies()</code>) avoided rarefying collections/references, as this step would be largely redundant with rarefying sites/raster grid cells <span class="citation" data-cites="Antell2020">(<a href="#ref-Antell2020" role="doc-biblioref">Antell et al. 2020</a>)</span>. The number of PBDB reference counts for marine invertebrate occurrences correlates nearly perfectly with grid cell counts <span class="citation" data-cites="Alroy2008">(<a href="#ref-Alroy2008" role="doc-biblioref"><strong>Alroy2008?</strong></a>)</span>. Applying rarefaction to both grid cells and collections or references would compress the distribution of observed values, which could reduce the statistical power of analysis and heighten the risk of overlooking a true biological signal (type 2 error).</p>
+<p>In contrast, the study that developed the nearest-neighbour subsampling approach (described below) rarefied collections within references, following <span class="citation" data-cites="Alroy2014">(<a href="#ref-Alroy2014" role="doc-biblioref"><strong>Alroy2014?</strong></a>)</span>, but avoided rarefying sites/cells <span class="citation" data-cites="Close2017">(<a href="#ref-Close2017" role="doc-biblioref">Close et al. 2017</a>)</span>. The richness estimation procedure involved drawing PBDB references, drawing up to three collections within each of those references, and evaluating only the taxon occurrences within those subsampled collections. The <code>divvy</code> diversity summary function (<code>sdSumry()</code>) and the most recent study to use nearest-neighbour subsamples <span class="citation" data-cites="Close2020">(<a href="#ref-Close2020" role="doc-biblioref">Close et al. 2020</a>)</span> call on the <code>iNEXT</code> implementation of coverage-based richness estimation, which ignores the PBDB collections/references data structure. Therefore, users wishing to to rarefy collections and/or references should write custom richness estimation scripts or adapt Alroy’s Perl scripts.</p>
 <p>To filter out duplicate taxon–location records from a datset, thereby reducing object size and saving memory, <code>divvy</code> offers the <code>uniqify()</code> function. Omitting duplicate occurrences from <code>bivalves</code> removes more than 5,000 rows.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>bivUniq <span class="ot">&lt;-</span> <span class="fu">uniqify</span>(bivalves, <span class="at">taxVar =</span> <span class="st">'genus'</span>, xyCell)</span>
@@ -332,8 +336,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 <section id="nearest-neighbour-subsampling" class="level3">
-<h3 class="anchored" data-anchor-id="nearest-neighbour-subsampling">Nearest-neighbour subsampling</h3>
-<p>As mentioned in the preceding section, papers to date that analysed spatial subsamples constructed with the nearest-neighbour method constrained only the spatial dispersion and not cumulative area or number of sites <span class="citation" data-cites="Close2017 Close2020">[@Close2017; @Close2020]</span>. For backwards compatibility with these originator publications, the <code>clustr()</code> function contains an option to turn off site rarefaction (argument <code>nSite = NULL</code>). However, depending on study design it may well be prudent to standardise the area/number of sites when using the nearest-neighbour method, as is mandated in the circular subsampling method. To set the site quota for either method, use the <code>nSite</code> argument.</p>
+<h3 class="anchored" data-anchor-id="nearest-neighbour-subsampling">2.3 Nearest-neighbour subsampling</h3>
+<p>As mentioned in the preceding section, papers to date that analysed spatial subsamples constructed with the nearest-neighbour method constrained only the spatial dispersion and not cumulative area or number of sites <span class="citation" data-cites="Close2017 Close2020">(<a href="#ref-Close2017" role="doc-biblioref">Close et al. 2017</a>, <a href="#ref-Close2020" role="doc-biblioref">2020</a>)</span>. For backwards compatibility with these originator publications, the <code>clustr()</code> function contains an option to turn off site rarefaction (argument <code>nSite = NULL</code>). However, depending on study design it may well be prudent to standardise the area/number of sites when using the nearest-neighbour method, as is mandated in the circular subsampling method. To set the site quota for either method, use the <code>nSite</code> argument.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">2</span>)</span>
 <span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>nnLocs <span class="ot">&lt;-</span> <span class="fu">clustr</span>(<span class="at">dat =</span> bivalves, </span>
@@ -377,7 +381,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </section>
 <section id="latitudinal-subsampling" class="level3">
-<h3 class="anchored" data-anchor-id="latitudinal-subsampling">Latitudinal subsampling</h3>
+<h3 class="anchored" data-anchor-id="latitudinal-subsampling">2.4 Latitudinal subsampling</h3>
 <p>Many biological and environmental variables of interest vary characteristically with latitude. Hence, depending on research question it may be exigent to control for latitudinal differences between items of comparison, e.g.&nbsp;occurrence data from a time step with predominantly low-latitude fossil localities vs.&nbsp;a time step with more mid-latitude localities.</p>
 <p>The <code>bandit()</code> function returns subsamples of a given site quota within latitudinal bands of a given bin resolution/width. Optionally, the function will ignore hemisphere differences and consider absolute latitude. The <code>iter</code> argument in <code>bandit()</code> specifies the number of subsamples to take within each band, rather than the total number globally. No subsamples are returned in bands containing fewer than <code>nSite</code> localities.</p>
 <div class="cell">
@@ -404,7 +408,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </section>
 </section>
 <section id="analysis-on-subsampled-data" class="level2">
-<h2 class="anchored" data-anchor-id="analysis-on-subsampled-data">Analysis on subsampled data</h2>
+<h2 class="anchored" data-anchor-id="analysis-on-subsampled-data">3. Analysis on subsampled data</h2>
 <p>The <code>sdSumry()</code> function returns a summary of the spatial characteristics of a dataset/subsample: number of unique locations, centroid coordinates, latitudinal range (degrees), great circle distance (km), and summed minimum spanning tree length (km) for occurrences. <code>sdSumry()</code> also tallies taxa in a sample and performs coverage-based rarefaction (if <code>quotaQ</code> supplied) and classical rarefaction (if <code>quotaN</code> supplied). Rarefied estimates are returned along with their associated 95% confidence interval (estimated by <code>iNEXT</code>).</p>
 <p>When coverage-based rarefaction is applied, the specified coverage level (<code>quotaQ</code>) should be appropriate for the estimated coverage of the original sample. Any requested quota greater than empirically available will require diversity extrapolation. <code>sdSumry()</code> returns the estimated sample coverage whenever coverage-based rarefaction is applied. Also note, homogeneous evenness is an underlying assumption for fair comparisons of coverage-based rarefaction diversity estimates. To help check this assumption, <code>sdSumry()</code> also returns Pielou’s J evenness metric whenever coverage-based rarefaction is applied. Evenness metrics are an area of ongoing theoretical debate and methodological development in ecology, and the use of Pielou’s J in <code>divvy</code> is a reflection of this metrics’ widespread use rather than a singular endorsement. If J estimates vary widely between time intervals or other categories of comparison, it is worth investigating evenness differences in more nuanced detail, for instance by calculating a variety of metrics.</p>
 <p>Compare the summary data from the original dataset vs.&nbsp;a single spatial subsample. First consider the summary of spatial metrics. The geographic dispersion of <code>bivalves</code> occurrences is enormous—this in itself indicates spatial standardisation is necessary to derive meaningful biological metrics. When we compare diversity estimates from the global vs.&nbsp;spatially-subsampled dataset, richness estimates are much higher for the global dataset, regardless of rarefaction method. This result demonstrates the species–area effect described in the introduction: even when rarefaction is applied to the same quota or coverage level, diversity estimates are larger for datasets with greater spatial coverage, because rarefaction fails to control spatial turnover in diversity.</p>
@@ -459,13 +463,23 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </div>
 </div>
 </section>
-<section id="references" class="level2">
-<h2 class="anchored" data-anchor-id="references">References</h2>
-<p>Alroy, John. 2010. “The Shifting Balance of Diversity Among Major Marine Animal Groups.” Science 329 (5996): 1191–94. https://doi.org/10.1126/science.1189910. Alroy, John. 2014. “Accurate and Precise Estimates of Origination and Extinction Rates.” Paleobiology 40 (3): 374–97. https://doi.org/10.1666/13036. Alroy, John, Martin Aberhan, David J Bottjer, Michael Foote, Franz T Fürsich, Peter J Harries, Austin J W Hendy, et al.&nbsp;2008. “Phanerozoic Trends in the Global Diversity of Marine Invertebrates.” Journal Article. Science 321 (5885): 97–100. https://doi.org/10.1126/science.1156963. Antell, Gawain T, Roger BJ Benson, and Erin E Saupe. accepted. “Spatial Standardization of Taxon Occurrence Data—a Call to Action.” Journal Article. Paleobiology, accepted. https://doi.org/10.31223/X5997Z. Antell, Gawain T, Wolfgang Kiessling, Martin Aberhan, and Erin E Saupe. 2020. “Marine Biodiversity and Geographic Distributions Are Independent on Large Scales.” Journal Article. Current Biology 30 (1): 115–21. https://doi.org/10.1016/j.cub.2019.10.065. Benson, Roger BJ, Richard Butler, Roger A Close, Erin Saupe, and Daniel L Rabosky. 2021. “Biodiversity Across Space and Time in the Fossil Record.” Current Biology 31 (19): R1225–36. https://doi.org/10.1016/j.cub.2021.07.071. Chao, Anne, and Lou Jost. 2012. “Coverage-Based Rarefaction and Extrapolation: Standardizing Samples by Completeness Rather Than Size.” Ecology 93 (12): 2533–47. https://doi.org/10.1890/11-1952.1. Close, Roger A, Roger B J Benson, Erin E Saupe, Michael E Clapham, and Richard J Butler. 2020. “The Spatial Structure of Phanerozoic Marine Animal Diversity.” Journal Article. Science 368 (6489): 420–24. https://doi.org/10.1126/science.aay8309. Close, Roger A, Roger B J Benson, Paul Upchurch, and Richard J Butler. 2017. “Controlling for the Species-Area Effect Supports Constrained Long-Term Mesozoic Terrestrial Vertebrate Diversification.” Journal Article. Nature Communications 8. https://doi.org/10.1038/ncomms15381.</p>
+<section id="references" class="level2 unnumbered">
+
+
 </section>
 
 
-<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+<div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">4. References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-Antell2020" class="csl-entry" role="listitem">
+Antell, Gawain T, Wolfgang Kiessling, Martin Aberhan, and Erin E Saupe. 2020. <span>“Marine Biodiversity and Geographic Distributions Are Independent on Large Scales.”</span> Journal Article. <em>Current Biology</em> 30 (1): 115–21.
+</div>
+<div id="ref-Close2020" class="csl-entry" role="listitem">
+Close, Roger A, Roger BJ Benson, Erin E Saupe, Michael E Clapham, and Richard J Butler. 2020. <span>“The Spatial Structure of Phanerozoic Marine Animal Diversity.”</span> Journal Article. <em>Science</em> 368 (6489): 420–24.
+</div>
+<div id="ref-Close2017" class="csl-entry" role="listitem">
+Close, Roger A, Roger BJ Benson, Paul Upchurch, and Richard J Butler. 2017. <span>“Controlling for the Species-Area Effect Supports Constrained Long-Term Mesozoic Terrestrial Vertebrate Diversification.”</span> <em>Nature Communications</em> 8 (1): 15381.
+</div>
+</div></section><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
 
 <ol>
 <li id="fn1"><p>If vector and raster data are new concepts, a well-curated resource for learning the essentials of working with spatial data in R is <a href="https://rspatial.org/spatial/2-spatialdata.html">rspatial.org</a>.<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
