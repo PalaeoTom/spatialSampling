@@ -115,7 +115,7 @@ worldP +
   geom_sf(data = smplPts, shape = 17, color = 'red')
 ```
 
-Now note that the first code chunk in this section set the `weight` argument of `cookies()` to `TRUE`. Weighting is designed to cluster subsample sites more compactly than random selection; that is, distant points will tend to be left out. Weighting is achieved by increasing the probability of drawing a site the closer it falls to the central occurrence point ('seed cell') in a given subsample. The seed cell is always included in weighted subsamples (but not necessarily in unweighted ones) and corresponds to the first row listed in the output. To visualize the weighted subsample method further, let's extract the seed location and manually plot the circular constraint around it. 
+Now note that the first code chunk in this section set the `weight` argument of `cookies()` to `TRUE`. Weighting is designed to cluster subsample sites more compactly than random selection; that is, distant points will tend to be left out. Weighting is achieved by increasing the probability of drawing a site the closer it falls to the central occurrence point ('seed cell') in a given subsample. The seed cell is always included in weighted subsamples (but not necessarily in unweighted ones) and corresponds to the first row listed in the output. To visualize the weighted subsample method further, let's extract the seed location and manually plot the circular constraint around it.
 
 ```{r count pool size, fig.width=6, fig.align='center'}
 cntr <- smplPts[1,]
@@ -258,6 +258,4 @@ sampsMeta <- sdSumry(dat = circOccs,
 quantile(sampsMeta$nTax, c(0.25, 0.5, 0.75))
 ```
 
-
 ## 4. References
-
