@@ -25,7 +25,7 @@ MaxEntFile <- list.files(system.file("extdata", package = "megaSDM"),
 
 # Set up Working Directory------------------------------------------------------
 
-WD <- "/Users/tjs/R_packages/R_projects/spatialSampling"
+WD <- "/Users/tjs/R_packages/R_projects/spatialSampling/day_2/"
 setwd(WD)
 
 ## Define Output for Data/Models------------------------------------------------

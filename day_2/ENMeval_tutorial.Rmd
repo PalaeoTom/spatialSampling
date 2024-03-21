@@ -1,14 +1,8 @@
 ---
-title: "ENMeval 2.0 Vignette"
-author: "Jamie M. Kass, Robert Muscarella, Gonzalo E. Pinilla-Buitrago, and Peter J. Galante"
-date: "`r Sys.Date()`"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{ENMeval 2.0 Vignette}
-  %\VignetteEncoding{UTF-8}
-  %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+title: "ENMeval 2.0 tutorial"
+author: Jamie M. Kass, Robert Muscarella, Gonzalo E. Pinilla-Buitrago, and Peter J. Galante. Adapted by Thomas J. Smith
+format: html
+editor: visual
 ---
 
 ```{r setup, echo = FALSE, include=FALSE}
@@ -16,24 +10,23 @@ library(knitr)
 knitr::opts_chunk$set(collapse=TRUE, message=FALSE, warning=FALSE, eval=TRUE, comment="#>", fig.width = 7, fig.height = 7)
 ```
 
-- [Introduction](#intro)
-- [Data Acquisition & Pre-processing](#data)
-- [Partitioning Occurrences for Evaluation](#partition)
-- [Running ENMeval](#eval)
-- [Model Selection](#select)
-- [Plotting results](#plot)
-- [Null Models](#null)
-- [Metadata](#metadata)
-- [References and Resources](#resources)
-
+-   [Introduction](#intro)
+-   [Data Acquisition & Pre-processing](#data)
+-   [Partitioning Occurrences for Evaluation](#partition)
+-   [Running ENMeval](#eval)
+-   [Model Selection](#select)
+-   [Plotting results](#plot)
+-   [Null Models](#null)
+-   [Metadata](#metadata)
+-   [References and Resources](#resources)
 
 ## Introduction {#intro}
 
-[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models (ENMs, a.k.a. species distribution models or SDMs), which can estimate species' ranges and niche characteristics using data on species occurrences and environmental variables (Franklin 2010, Peterson et al. 2011, Guisan et al. 2017). 
+[`ENMeval`](https://cran.r-project.org/package=ENMeval) is an R package that performs automated tuning and evaluations of ecological niche models (ENMs, a.k.a. species distribution models or SDMs), which can estimate species' ranges and niche characteristics using data on species occurrences and environmental variables (Franklin 2010, Peterson et al. 2011, Guisan et al. 2017).
 
 Some of the most frequently used ENMs are machine learning algorithms with settings that can be "tuned" to determine optimal levels of model complexity (Hastie et al. 2009, Radosavljevic & Anderson 2014, Hallgren et al. 2019). In implementation, this means building models of varying settings, then evaluating them and comparing their performance to select the optimal settings. Such tuning exercises can result in models that balance goodness-of-fit (i.e., avoiding overfitting) and predictive ability. Model evaluation is often done with cross-validation, which consists of partitioning the data into groups, building a model with all the groups but one, evaluating this model on the left-out group, then repeating the process until all groups have been left out once (Hastie et al. 2009, Roberts et al. 2017).
 
-`ENMeval` has one primary function, `ENMevaluate()`, which runs the tuning analysis and evaluations, returning an `ENMevaluation` object that contains the results. These results include a table of evaluation statistics, fitted model objects, and prediction rasters for each combination of model settings. The older versions of `ENMeval` (0.3.0 and earlier; Muscarella et al. 2014) implemented only the ENM presence-background algorithm Maxent through the Java software [maxent.jar](http://biodiversityinformatics.amnh.org/open_source/maxent/) and the R package  [`maxnet`](https://cran.r-project.org/package=maxnet), but `ENMeval` 2.0 offers functionality for adding and customizing the implementations of ENM algorithms and their evaluations. This new version also features automatic generation of metadata, a null model for calculating effect size and significance of performance metrics, various plotting tools, options for parallel computing, and more.  
+`ENMeval` has one primary function, `ENMevaluate()`, which runs the tuning analysis and evaluations, returning an `ENMevaluation` object that contains the results. These results include a table of evaluation statistics, fitted model objects, and prediction rasters for each combination of model settings. The older versions of `ENMeval` (0.3.0 and earlier; Muscarella et al. 2014) implemented only the ENM presence-background algorithm Maxent through the Java software [maxent.jar](http://biodiversityinformatics.amnh.org/open_source/maxent/) and the R package [`maxnet`](https://cran.r-project.org/package=maxnet), but `ENMeval` 2.0 offers functionality for adding and customizing the implementations of ENM algorithms and their evaluations. This new version also features automatic generation of metadata, a null model for calculating effect size and significance of performance metrics, various plotting tools, options for parallel computing, and more.\
 In this updated vignette, we detail a full ENM analysis: acquisition and processing of input data, sampling background data, deciding on partitioning methods, tuning models, examining results and selecting optimal model settings, building null models to test for significance of performance metrics, and more using `ENMeval` 2.0 and other relevant R packages. In addition to this vignette, there are other excellent tutorials on ENMs, some of which can be found in the [References and Resources](#resources) section.
 
 ## Data Acquisition & Pre-processing {#data}
@@ -200,19 +193,21 @@ points(bg, pch = 20, cex = 0.2)
 ```
 
 ## Partitioning Occurrences for Evaluation {#partition}
+
 A run of `ENMevaluate()` begins by using one of seven methods to partition occurrence localities into validation and training bins (folds) for *k*-fold cross-validation (Fielding & Bell 1997, Hastie et al. 2009, Peterson et al. 2011). Data partitioning is done internally by `ENMevaluate()` based on what the user inputs for the `partitions` argument, but this can also be done externally using the partitioning functions. In this section, we explain and illustrate these different functions. We also demonstrate how to make informative plots of partitions and the environmental similarity of partitions to the background or study extent.
 
-1. [Spatial Block](#block)
-2. [Spatial Checkerboard](#cb1)
-3. [Spatial Hierarchical Checkerboard](#cb2)
-4. [Jackknife (leave-one-out)](#jack)
-5. [Random *k*-fold](#rand)
-6. [Fully Withheld Testing Data](#testing)
-7. [User](#user)
+1.  [Spatial Block](#block)
+2.  [Spatial Checkerboard](#cb1)
+3.  [Spatial Hierarchical Checkerboard](#cb2)
+4.  [Jackknife (leave-one-out)](#jack)
+5.  [Random *k*-fold](#rand)
+6.  [Fully Withheld Testing Data](#testing)
+7.  [User](#user)
 
 The first three partitioning methods are variations of what Radosavljevic and Anderson (2014) referred to as 'masked geographically structured' data partitioning. Basically, these methods partition both occurrence and background records into evaluation bins based on spatial rules. The intention is to reduce spatial-autocorrelation between points that are included in the validation and training bins, which can overinflate model performance, at least for data sets that result from biased sampling (Veloz 2009, Wenger & Olden 2012, Roberts et al. 2017). Other spatial partitioning methods for ENMs can be found in the R package `blockCV` (Valavi et al. 2019), which we demonstrate below for use with `ENMeval`.
 
 #### 1. Block {#block}
+
 First, the 'block' method partitions data according to the latitude and longitude lines that divide the occurrence localities into four spatial groups of equal numbers (or as close as possible). Both occurrence and background localities are assigned to each of the four bins based on their position with respect to these lines -- the first direction bisects the points into two groups, and the second direction bisects each of these further into two groups each, resulting in four groups. The resulting object is a list of two vectors that supply the bin designation for each occurrence and background point. In `ENMeval` 2.0, users can additionally specify different orientations for the blocking with the `orientation` argument.
 
 ```{r part.block}
@@ -261,6 +256,7 @@ evalplot.envSim.map(sim.type = "most_sim", ref.data = "occs", envs = envs, occs.
 ```
 
 #### 2. Checkerboard1 {#cb1}
+
 The next two partitioning methods are variants of a 'checkerboard' approach to partition occurrence localities (Radosavljevic & Anderson 2014). These generate checkerboard grids across the study extent and partition the localities into groups based on where they fall on the checkerboard. In contrast to the block method, both checkerboard methods subdivide geographic space equally but do not ensure a balanced number of occurrence localities in each bin. For these methods, the user needs to provide a raster layer on which to base the underlying checkerboard pattern. Here we simply use the predictor variable RasterStack. Additionally, the user needs to define an *aggregation.factor*. This value specifies the number of grids cells to aggregate when making the underlying checkerboard pattern.
 
 The checkerboard1 method partitions the points into *k* = 2 spatial groups using a simple checkerboard pattern.
@@ -291,6 +287,7 @@ evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = 
 ```
 
 #### 3. Checkerboard2 {#cb2}
+
 The Checkerboard2 method partitions the data into *k* = 4 spatial groups. This is done by hierarchically aggregating the input raster at two scales. Presence and background groups are assigned based on which box they fall into on the hierarchical checkerboard.
 
 ```{r part.ck2}
@@ -309,7 +306,8 @@ evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = 
 ```
 
 #### 4. Jackknife (leave-one-out) {#jack}
-The next two methods differ from the first three in that (a) they do not partition the background points into different groups (meaning that the full background is used to evaluate each partition), and (b) they do not account for spatial autocorrelation between validation and training localities. Primarily when working with relatively small data sets (e.g. < ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova & Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning (Hastie et al. 2009). As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets. 
+
+The next two methods differ from the first three in that (a) they do not partition the background points into different groups (meaning that the full background is used to evaluate each partition), and (b) they do not account for spatial autocorrelation between validation and training localities. Primarily when working with relatively small data sets (e.g. \< ca. 25 presence localities), users may choose a special case of *k*-fold cross-validation where the number of bins (*k*) is equal to the number of occurrence localities (*n*) in the data set (Pearson et al. 2007; Shcheglovitova & Anderson 2013). This is referred to as jackknife, or leave-one-out, partitioning (Hastie et al. 2009). As *n* models are processed with this partitioning method, the computation time could be long for large occurrence datasets.
 
 ```{r part.jk}
 jack <- get.jackknife(occs, bg)
@@ -319,6 +317,7 @@ evalplot.grps(pts = occs, pts.grp = jack$occs.grp, envs = envs.bg)
 ```
 
 #### 5. Random k-fold {#rand}
+
 The 'random k-fold' method partitions occurrence localities randomly into a user-specified number of (*k*) bins (Hastie et al. 2009). This method is equivalent to the 'cross-validate' partitioning scheme available in the current version of the Maxent software GUI. Especially with larger occurrence datasets, this partitioning method could randomly result in some spatial clustering of groups, which is why spatial partitioning methods are preferable for addressing spatial autocorrelation (Roberts et al. 2017). Below, we partition the data into five random groups.
 
 ```{r part.rand}
@@ -334,7 +333,8 @@ evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = 
 ```
 
 #### 6. Fully Withheld Testing Data {#testing}
-The 'testing' method evaluates the model on a fully withheld testing dataset that is not used to create the full model (i.e., not included in the training data), meaning that cross validation statistics are not calculated. Evaluations with fully withheld testing data have been shown to result in models with better transferability (Soley-Guardia et al. 2019). 
+
+The 'testing' method evaluates the model on a fully withheld testing dataset that is not used to create the full model (i.e., not included in the training data), meaning that cross validation statistics are not calculated. Evaluations with fully withheld testing data have been shown to result in models with better transferability (Soley-Guardia et al. 2019).
 
 To illustrate this, we will make a table containing occurrences representing both training data and fully withheld testing data (which we simulate) and plot the partitions in the same way as above. However, the testing data (group 2) will not become training data for a new model. Instead, the training data (group 1) is used to make the model, and the testing data (group 2) are used only to evaluate it. Thus, the background extent does not include the testing data (a few points fall inside this extent because of the buffer we applied, but they are not used as training data).
 
@@ -362,6 +362,7 @@ evalplot.envSim.map(sim.type = "mess", ref.data = "occs", envs = envs, occs.z = 
 ```
 
 #### 7. User-defined {#user}
+
 For maximum flexibility, the last partitioning method is designed so that users can define *a priori* partitions. This provides a flexible way to conduct spatially-independent cross-validation with background masking. For example, we demonstrate partitioning the occurrence data based on *k*-means groups. The user-defined partition option can also be used to input partition groups derived from other sources.
 
 ```{r part.user1}
@@ -422,12 +423,14 @@ evalplot.grps(pts = bg, pts.grp = bg.grp, envs = envs.bg)
 Selecting which of these data partitioning methods to use should be based on the research objectives and the characteristics of the study system. Refer to the [References and Resources](#resources) section for studies and resources to consult for more information concerning partitioning for model evaluation.
 
 ## Running ENMeval {#eval}
+
 Once we decide which method of data partitioning we would like to use, we are ready to start building models. We now move on to the main function in `ENMeval`: `ENMevaluate()`.
 
 #### Initial considerations
+
 Although any algorithm can potentially be specified in ENMeval 2.0 (see below), and `ENMeval` 2.0 has built-in implementations for Maxent and BIOCLIM, we will explain here the tuning procedure for Maxent models (either `maxent.jar` or `maxnet`). For Maxent models (Phillips et al. 2006, Phillips et al. 2008, Phillips et al. 2017), the two main parameters to tune when calling `ENMevaluate` are (1) the range of regularization multiplier values and (2) the combinations of feature classes (Elith et al. 2011, Merow et al. 2013). The ***regularization multiplier*** (RM) determines the penalty associated with including variables or their transformations in the model. Higher RM values impose a stronger penalty on model complexity and thus result in simpler (*flatter*) model predictions. The ***feature classes*** determine the potential shape of the marginal response curves. A model that is only allowed to include linear feature classes will most likely be simpler than a model that is allowed to include all possible feature classes. A more detailed description of these parameters is available in the [References and Resources](#resources) section. For the purposes of this vignette, we demonstrate simply how to adjust these parameters. The following section deals with comparing the outputs of each model.
 
-Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the `n.bg` argument. If any of your predictor variables are categorical (e.g., biomes in this dataset), you should define which layer(s) these are using the 'categoricals' argument or assign them as factors in the RasterStack or input table  (like we did here).
+Unless you supply the function with background points (which is recommended in many cases), you will need to define how many background points should be used with the `n.bg` argument. If any of your predictor variables are categorical (e.g., biomes in this dataset), you should define which layer(s) these are using the 'categoricals' argument or assign them as factors in the RasterStack or input table (like we did here).
 
 `ENMevaluate()` builds a separate model for each unique combination of RM values and feature class combinations. For example, the following call will build and evaluate 2 models. One with RM=1 and another with RM=2, both allowing only linear features.
 
@@ -466,6 +469,7 @@ overlap[1:5,]
 ```
 
 #### Different parameterizations
+
 There are multiple ways to run the function `ENMevaluate()`, and we will go over how to specify each parameterization and what the effects are on the results.
 
 ```{r evalExamples, eval = FALSE}
@@ -539,36 +543,37 @@ e.mx.proc@results
 e.mx.proc@results.partitions
 ```
 
-Yet another way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object). 
+Yet another way to run `ENMevaluate()` is by specifying a new algorithm using the `ENMdetails` object. Built-in algorithms (maxent.jar, maxnet, BIOCLIM) are implemented as `ENMdetails` objects---they can be found in the /R folder of the package with the file name "enm.name", where "name" is the algorithm. The `ENMdetails` object specifies the way `ENMevaluate()` should run the algorithm. It has some simple functions that output 1) the algorithm's name, 2) the function that runs the algorithm, 3) particular messages or errors, 4) the arguments for the model's function, 5) a specific parameterization of the `predict()` function, 6) the number of non-zero model coefficients, and 7) the variable importance table (if one is available from the model object).
 
 Users can construct their own `ENMdetails` object using the built-in ones as guides. For example, a user can copy the "enm.maxnet.R" script, modify the code to specify a different model, save it as a new script in the /R folder with the name "enm.myAlgorithm", and use it to run `ENMevaluate()`. To be able to specify the model with the `algorithm` argument in `ENMevaluate()`, a small modification needs to be made to add it to list in the `lookup.enm()` internal function found in "R/utilities.R". We plan to work with other research groups to identify best practices for tuning other algorithms with presence-background/pseudoabsence data and implement new algorithms in ENMeval in the future.
 
-
 #### Exploring the results
-Now let's take a look at the output from `ENMevaluate()`, which is an `ENMevaluation` object, in more detail (also see `?ENMevaluation`).  It contains the following slots:
 
-- `algorithm` A character vector showing which algorithm was used
-- `tune.settings` A data.frame of settings that were tuned
-- `partition.method` A character of partitioning method used
-- `partition.settings` A list of partition settings used (i.e., value of *k* or aggregation factor)
-- `other.settings` A list of other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
-- `doClamp` A logical indicating whether or not clamping was used 
-- `clamp.directions` A list of the clamping directions specified 
-- `results` A data.frame of evaluation summary statistics
-- `results.partitions` A data.frame of evaluation k-fold statistics
-- `models` A list of model objects
-- `variable.importance` A list of data frames with variable importance for each model (when applicable)
-- `predictions` A RasterStack of model predictions
-- `taxon.name` A character for taxon name (when specified)
-- `occs` A data frame of the occurrence record coordinates used for model training
-- `occs.testing` A data frame of the coordinates of the fully withheld testing records (when specified)
-- `occs.grp` A vector of partition groups for occurrence records
-- `bg` A data frame of background record coordinates used for model training
-- `bg.grp` A vector of partition groups for background records
-- `overlap` A list of matrices of pairwise niche overlap statistics
-- `rmm` A list of rangeModelMetadata objects for each model
+Now let's take a look at the output from `ENMevaluate()`, which is an `ENMevaluation` object, in more detail (also see `?ENMevaluation`). It contains the following slots:
+
+-   `algorithm` A character vector showing which algorithm was used
+-   `tune.settings` A data.frame of settings that were tuned
+-   `partition.method` A character of partitioning method used
+-   `partition.settings` A list of partition settings used (i.e., value of *k* or aggregation factor)
+-   `other.settings` A list of other modeling settings used (i.e., decisions about clamping, AUC diff calculation)
+-   `doClamp` A logical indicating whether or not clamping was used
+-   `clamp.directions` A list of the clamping directions specified
+-   `results` A data.frame of evaluation summary statistics
+-   `results.partitions` A data.frame of evaluation k-fold statistics
+-   `models` A list of model objects
+-   `variable.importance` A list of data frames with variable importance for each model (when applicable)
+-   `predictions` A RasterStack of model predictions
+-   `taxon.name` A character for taxon name (when specified)
+-   `occs` A data frame of the occurrence record coordinates used for model training
+-   `occs.testing` A data frame of the coordinates of the fully withheld testing records (when specified)
+-   `occs.grp` A vector of partition groups for occurrence records
+-   `bg` A data frame of background record coordinates used for model training
+-   `bg.grp` A vector of partition groups for background records
+-   `overlap` A list of matrices of pairwise niche overlap statistics
+-   `rmm` A list of rangeModelMetadata objects for each model
 
 Let's first examine the structure of the object.
+
 ```{r results1}
 e.mx
 # Simplify the summary to look at higher level items.
@@ -576,6 +581,7 @@ str(e.mx, max.level=2)
 ```
 
 We can use helper functions to access the slots in the `ENMevaluation` object.
+
 ```{r algorithm}
 # Access algorithm, tuning settings, and partition method information.
 eval.algorithm(e.mx)
@@ -669,6 +675,7 @@ opt.seq
 ```
 
 Let's now choose the optimal model settings based on the sequential criteria and examine it.
+
 ```{r mod.obj1}
 # We can select a single model from the ENMevaluation object using the tune.args of our
 # optimal model.
@@ -696,7 +703,7 @@ This is how to view the marginal response curves for `maxent.jar` models.
 dismo::response(eval.models(e.mxjar)[[opt.seq$tune.args]])
 ```
 
-Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions >3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate()`.
+Now we plot and inspect the prediction raster for our optimal model. Note that by default for `maxent.jar` (versions \>3.3.3k) or `maxnet` models, these predictions are in the 'cloglog' output format that is bounded between 0 and 1 (Phillips et al. 2017). This can be changed with the `pred.type` argument in `ENMevaluate()`.
 
 These predictions are for the entire extent of the input predictor variable rasters, and thus include areas outside of the background extent used for model training. Thus, we should interpret areas far outside this extent with caution.
 
@@ -712,7 +719,7 @@ points(eval.bg(e.mx), pch = 3, col = eval.bg.grp(e.mx), cex = 0.5)
 points(eval.occs(e.mx), pch = 21, bg = eval.occs.grp(e.mx))
 ```
 
-Let us now explore how model complexity changes the predictions in our example. We will compare the simple model built with only linear feature classes and the highest regularization multiplier value we used (fc='L', rm=5) with the complex model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH',  rm=1). We will first examine the marginal response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. Deciding on whether a model that is more simple or complex is appropriate for your study is not straightforward, but guides exist in the literature (e.g., Merow et al. 2014). 
+Let us now explore how model complexity changes the predictions in our example. We will compare the simple model built with only linear feature classes and the highest regularization multiplier value we used (fc='L', rm=5) with the complex model built with linear, quadratic, and hinge feature classes and the lowest regularization multiplier value we used (i.e., fc='LQH', rm=1). We will first examine the marginal response curves, and then the mapped model model predictions. Notice how the simpler models tend to have more smooth predictions of suitability, while the complex ones tend to show more patchiness. Deciding on whether a model that is more simple or complex is appropriate for your study is not straightforward, but guides exist in the literature (e.g., Merow et al. 2014).
 
 ```{r plot.pred2}
 # First, let's examine the non-zero model coefficients in the betas slot.
@@ -793,127 +800,124 @@ rmm$prediction$continuous$units <- "suitability (cloglog transformation)"
 rangeModelMetadata::rmmToCSV(rmm, "rmm_mx1.csv")
 ```
 
-
 ## References and Resources {#resources}
 
 This list of references and resources is not exhaustive by any means, and mainly includes those sources we referenced in the vignette text. The field is expanding further every year, and there are many other papers and packages that one learning about ENMs should explore.
 
 ###### Web Resources
-- [Hijmans, R. & Elith, J. (2021) Species distribution modeling.](https://rspatial.org/raster/sdm/)
 
-- [Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent)
+-   [Hijmans, R. & Elith, J. (2021) Species distribution modeling.](https://rspatial.org/raster/sdm/)
 
-- [Phillips, S. J. (2021) A brief tutorial on Maxent. AT&T Research. Available at: https://biodiversityinformatics.amnh.org/open_source/maxent/Maxent_tutorial_2021.pdf](https://biodiversityinformatics.amnh.org/open_source/maxent/Maxent_tutorial_2021.pdf)
+-   [Maxent Google Group](https://groups.google.com/forum/embed/#!forum/maxent)
 
-- [Yoder, J. (2013). Species distribution models in R. The Molecular Ecologist.](https://www.molecularecologist.com/2013/04/species-distribution-models-in-r/)
+-   [Phillips, S. J. (2021) A brief tutorial on Maxent. AT&T Research. Available at: https://biodiversityinformatics.amnh.org/open_source/maxent/Maxent_tutorial_2021.pdf](https://biodiversityinformatics.amnh.org/open_source/maxent/Maxent_tutorial_2021.pdf)
+
+-   [Yoder, J. (2013). Species distribution models in R. The Molecular Ecologist.](https://www.molecularecologist.com/2013/04/species-distribution-models-in-r/)
 
 ###### General Guides
 
-- [Araújo, M. B., Anderson, R. P., Barbosa, A. M., Beale, C. M., Dormann, C. F., Early, R., Garcia, R. A., Guisan, A., Maiorano, L., Naimi, B., & O’Hara, R. B. (2019). Standards for distribution models in biodiversity assessments. Science Advances, 5: eaat4858.](https://doi.org/10.1126/sciadv.aat4858)
+-   [Araújo, M. B., Anderson, R. P., Barbosa, A. M., Beale, C. M., Dormann, C. F., Early, R., Garcia, R. A., Guisan, A., Maiorano, L., Naimi, B., & O’Hara, R. B. (2019). Standards for distribution models in biodiversity assessments. Science Advances, 5: eaat4858.](https://doi.org/10.1126/sciadv.aat4858)
 
-- [Franklin, J. (2010). Mapping species distributions: spatial inference and prediction. Cambridge University Press.](https://doi.org/10.1017/CBO9780511810602)
+-   [Franklin, J. (2010). Mapping species distributions: spatial inference and prediction. Cambridge University Press.](https://doi.org/10.1017/CBO9780511810602)
 
-- [Guisan A., Thuiller W., & Zimmermann N. E. (2017). Habitat Suitability and Distribution Models with Applications in R. Cambridge University Press, Cambridge, UK.](https://doi.org/10.1017/9781139028271)
+-   [Guisan A., Thuiller W., & Zimmermann N. E. (2017). Habitat Suitability and Distribution Models with Applications in R. Cambridge University Press, Cambridge, UK.](https://doi.org/10.1017/9781139028271)
 
-- [Merow, C., Smith, M. J., Edwards Jr, T. C., Guisan, A., McMahon, S. M., Normand, S., Thuiller, W., Wüest, R. O., Zimmermann, N. E., & Elith, J. (2014). What do we gain from simplicity versus complexity in species distribution models? Ecography, 37: 1267–1281.](https://doi.org/10.1111/ecog.00845)
+-   [Merow, C., Smith, M. J., Edwards Jr, T. C., Guisan, A., McMahon, S. M., Normand, S., Thuiller, W., Wüest, R. O., Zimmermann, N. E., & Elith, J. (2014). What do we gain from simplicity versus complexity in species distribution models? Ecography, 37: 1267–1281.](https://doi.org/10.1111/ecog.00845)
 
-- [Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., & Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](https://press.princeton.edu/titles/9641.html)
+-   [Peterson, A.T., Soberón, J., Pearson, R.G., Anderson, R.P., Martínez-Meyer, E., Nakamura, M., & Araújo, M.B. (2011) Ecological Niches and Geographic Distributions. Monographs in Population Biology, 49. Princeton University Press.](https://press.princeton.edu/titles/9641.html)
 
--[VanDerWal, J., Shoo, L. P., Graham, C., & Williams, S. E. (2009). Selecting pseudo-absence data for presence-only distribution modeling: how far should you stray from what you know?. Ecological Modelling, 220: 589-594.](https://doi.org/10.1016/j.ecolmodel.2008.11.010)
+\-[VanDerWal, J., Shoo, L. P., Graham, C., & Williams, S. E. (2009). Selecting pseudo-absence data for presence-only distribution modeling: how far should you stray from what you know?. Ecological Modelling, 220: 589-594.](https://doi.org/10.1016/j.ecolmodel.2008.11.010)
 
 ###### Maxent
 
-- [Elith, J., Phillips, S. J., Hastie, T., Dudík, M., Chee, Y. E., & Yates, C. J. (2011). A statistical explanation of MaxEnt for ecologists. Diversity and Distributions, 17(1), 43-57.](https://doi.org/10.1111/j.1472-4642.2010.00725.x)
+-   [Elith, J., Phillips, S. J., Hastie, T., Dudík, M., Chee, Y. E., & Yates, C. J. (2011). A statistical explanation of MaxEnt for ecologists. Diversity and Distributions, 17(1), 43-57.](https://doi.org/10.1111/j.1472-4642.2010.00725.x)
 
-- [Merow, C., Smith, M., & Silander, J.A. (2013). A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography, 36, 1-12.](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1600-0587.2013.07872.x)
+-   [Merow, C., Smith, M., & Silander, J.A. (2013). A practical guide to Maxent: what it does, and why inputs and settings matter. Ecography, 36, 1-12.](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1600-0587.2013.07872.x)
 
-- [Phillips, S. J., Anderson, R. P., & Schapire, R. E. (2006). Maximum entropy modeling of species geographic distributions. Ecological Modelling, 190: 231–259.](https://doi.org/10.1016/j.ecolmodel.2005.03.026)
+-   [Phillips, S. J., Anderson, R. P., & Schapire, R. E. (2006). Maximum entropy modeling of species geographic distributions. Ecological Modelling, 190: 231–259.](https://doi.org/10.1016/j.ecolmodel.2005.03.026)
 
-- [Phillips, S. J., & Dudík, M. (2008). Modeling of species distributions with Maxent: new extensions and a comprehensive evaluation. Ecography, 31: 161-175.](https://doi.org/10.1111/j.0906-7590.2008.5203.x)
+-   [Phillips, S. J., & Dudík, M. (2008). Modeling of species distributions with Maxent: new extensions and a comprehensive evaluation. Ecography, 31: 161-175.](https://doi.org/10.1111/j.0906-7590.2008.5203.x)
 
-- [Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E., & Blair, M. E. (2017). Opening the black box: an open-source release of Maxent. Ecography, 40: 887–893.](https://doi.org/10.1111/ecog.03049)
+-   [Phillips, S. J., Anderson, R. P., Dudík, M., Schapire, R. E., & Blair, M. E. (2017). Opening the black box: an open-source release of Maxent. Ecography, 40: 887–893.](https://doi.org/10.1111/ecog.03049)
 
 ###### Environmental and Niche Similarity
 
-- [Elith, J., Kearney, M., & Phillips, S. (2010). The art of modelling range‐shifting species. Methods in Ecology and Evolution, 1(4), 330-342.](https://doi.org/10.1111/j.2041-210X.2010.00036.x)
+-   [Elith, J., Kearney, M., & Phillips, S. (2010). The art of modelling range‐shifting species. Methods in Ecology and Evolution, 1(4), 330-342.](https://doi.org/10.1111/j.2041-210X.2010.00036.x)
 
-- [Fitzpatrick, M. C., & Hargrove, W. W. (2009). The projection of species distribution models and the problem of non-analog climate. Biodiversity and Conservation, 18(8), 2255-2261.](https://doi.org/10.1007/s10531-009-9584-8)
+-   [Fitzpatrick, M. C., & Hargrove, W. W. (2009). The projection of species distribution models and the problem of non-analog climate. Biodiversity and Conservation, 18(8), 2255-2261.](https://doi.org/10.1007/s10531-009-9584-8)
 
-- [Mesgaran, M. B., Cousens, R. D., & Webber, B. L. (2014). Here be dragons: a tool for quantifying novelty due to covariate range and correlation change when projecting species distribution models. Diversity and Distributions, 20: 1147-1159.](https://doi.org/10.1111/ddi.12209)
+-   [Mesgaran, M. B., Cousens, R. D., & Webber, B. L. (2014). Here be dragons: a tool for quantifying novelty due to covariate range and correlation change when projecting species distribution models. Diversity and Distributions, 20: 1147-1159.](https://doi.org/10.1111/ddi.12209)
 
-- [Owens, H. L., Campbell, L. P., Dornak, L. L., Saupe, E. E., Barve, N., Soberón, J., ... & Peterson, A. T. (2013). Constraints on interpretation of ecological niche models by limited environmental ranges on calibration areas. Ecological Modelling, 263, 10-18.](https://doi.org/10.1016/j.ecolmodel.2013.04.011)
+-   [Owens, H. L., Campbell, L. P., Dornak, L. L., Saupe, E. E., Barve, N., Soberón, J., ... & Peterson, A. T. (2013). Constraints on interpretation of ecological niche models by limited environmental ranges on calibration areas. Ecological Modelling, 263, 10-18.](https://doi.org/10.1016/j.ecolmodel.2013.04.011)
 
-- [Warren, D. L., Glor, R. E., & Turelli, M. (2008). Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. Evolution: International Journal of Organic Evolution, 62: 2868-2883.](https://dx.doi.org/10.1111/j.1558-5646.2008.00482.x)
-
+-   [Warren, D. L., Glor, R. E., & Turelli, M. (2008). Environmental niche equivalency versus conservatism: quantitative approaches to niche evolution. Evolution: International Journal of Organic Evolution, 62: 2868-2883.](https://dx.doi.org/10.1111/j.1558-5646.2008.00482.x)
 
 ###### Model Evaluation
 
-- [Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., & Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography, 38, 541-545.](https://onlinelibrary.wiley.com/doi/abs/10.1111/ecog.01132)
+-   [Aiello-Lammens, M.E., Boria, R.A., Radosavljevic, A., Vilela, B., & Anderson, R.P. (2015) spThin: an R package for spatial thinning of species occurrence records for use in ecological niche models. Ecography, 38, 541-545.](https://onlinelibrary.wiley.com/doi/abs/10.1111/ecog.01132)
 
-- [Fielding, A.H. & Bell, J.F. (1997). A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf)
+-   [Fielding, A.H. & Bell, J.F. (1997). A review of methods for the assessment of prediction errors in conservation presence-absence models. Environmental Conservation 24, 38-49.](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.463.359&rep=rep1&type=pdf)
 
-- [Hallgren, W., Santana, F., Low-Choy, S., Zhao, Y., & Mackey, B. (2019). Species distribution models can be highly sensitive to algorithm configuration. Ecological Modelling, 408: 108719.](https://doi.org/10.1016/j.ecolmodel.2019.108719)
+-   [Hallgren, W., Santana, F., Low-Choy, S., Zhao, Y., & Mackey, B. (2019). Species distribution models can be highly sensitive to algorithm configuration. Ecological Modelling, 408: 108719.](https://doi.org/10.1016/j.ecolmodel.2019.108719)
 
-- [Hastie, T., Tibshirani, R., & Friedman, J. (2009). The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Springer, New York, NY.](https://web.stanford.edu/~hastie/ElemStatLearn/)
+-   [Hastie, T., Tibshirani, R., & Friedman, J. (2009). The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Springer, New York, NY.](https://web.stanford.edu/~hastie/ElemStatLearn/)
 
-- [Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., & Guisan, A. (2006). Evaluating the ability of habitat suitability models to predict species presences. Ecological Modelling, 199: 142-152.](https://doi.org/10.1016/j.ecolmodel.2006.05.017)
+-   [Hirzel, A. H., Le Lay, G., Helfer, V., Randin, C., & Guisan, A. (2006). Evaluating the ability of habitat suitability models to predict species presences. Ecological Modelling, 199: 142-152.](https://doi.org/10.1016/j.ecolmodel.2006.05.017)
 
-- [Kass, J. M., Anderson, R. P., Espinosa‐Lucas, A., Juárez‐Jaimes, V., Martínez‐Salas, E., Botello, F., Tavera, G., Flores‐Martínez, J. J., & Sánchez‐Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. Ecography, 43(3), 341-352.](https://doi.org/10.1111/ecog.04886)
+-   [Kass, J. M., Anderson, R. P., Espinosa‐Lucas, A., Juárez‐Jaimes, V., Martínez‐Salas, E., Botello, F., Tavera, G., Flores‐Martínez, J. J., & Sánchez‐Cordero, V. (2020). Biotic predictors with phenological information improve range estimates for migrating monarch butterflies in Mexico. Ecography, 43(3), 341-352.](https://doi.org/10.1111/ecog.04886)
 
-- [Lobo, J. M., Jiménez‐Valverde, A., & Real, R. (2008). AUC: a misleading measure of the performance of predictive distribution models. Global ecology and Biogeography, 17: 145-151.](https://doi.org/10.1111/j.1466-8238.2007.00358.x)
+-   [Lobo, J. M., Jiménez‐Valverde, A., & Real, R. (2008). AUC: a misleading measure of the performance of predictive distribution models. Global ecology and Biogeography, 17: 145-151.](https://doi.org/10.1111/j.1466-8238.2007.00358.x)
 
-- [Pearson, R.G., Raxworthy, C.J., Nakamura, M., & Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](https://doi.org/10.1111/j.1365-2699.2006.01594.x)
+-   [Pearson, R.G., Raxworthy, C.J., Nakamura, M., & Peterson, A.T. (2007) Predicting species distributions from small numbers of occurrence records: a test case using cryptic geckos in Madagascar. Journal of Biogeography 34, 102-117.](https://doi.org/10.1111/j.1365-2699.2006.01594.x)
 
-- [Peterson, A. T., Papeş, M., & Soberón, J. (2008). Rethinking receiver operating characteristic analysis applications in ecological niche modeling. Ecological Modelling, 213: 63-72.](http://dx.doi.org/10.1016/j.ecolmodel.2007.11.008)
+-   [Peterson, A. T., Papeş, M., & Soberón, J. (2008). Rethinking receiver operating characteristic analysis applications in ecological niche modeling. Ecological Modelling, 213: 63-72.](http://dx.doi.org/10.1016/j.ecolmodel.2007.11.008)
 
-- [Radosavljevic, A. & Anderson, R.P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](https://onlinelibrary.wiley.com/doi/abs/10.1111/jbi.12227)
+-   [Radosavljevic, A. & Anderson, R.P. (2014). Making better Maxent models of species distributions: complexity, overfitting and evaluation. Journal of Biogeography 41, 629-643.](https://onlinelibrary.wiley.com/doi/abs/10.1111/jbi.12227)
 
-- [Roberts, D. R., Bahn, V., Ciuti, S., Boyce, M. S., Elith, J., Guillera‐Arroita, G., Hauenstein, S., Lahoz‐Monfort, J. J., Schröder, B., Thuiller, W., & Warton, D. I. (2017). Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. Ecography, 40: 913–929.](https://doi.org/10.1111/ecog.02881)
+-   [Roberts, D. R., Bahn, V., Ciuti, S., Boyce, M. S., Elith, J., Guillera‐Arroita, G., Hauenstein, S., Lahoz‐Monfort, J. J., Schröder, B., Thuiller, W., & Warton, D. I. (2017). Cross-validation strategies for data with temporal, spatial, hierarchical, or phylogenetic structure. Ecography, 40: 913–929.](https://doi.org/10.1111/ecog.02881)
 
-- [Shcheglovitova, M. & Anderson, R.P. (2013). Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecological Modelling 269: 9-17.](https://www.sciencedirect.com/science/article/pii/S0304380013004043)
+-   [Shcheglovitova, M. & Anderson, R.P. (2013). Estimating optimal complexity for ecological niche models: A jackknife approach for species with small sample sizes. Ecological Modelling 269: 9-17.](https://www.sciencedirect.com/science/article/pii/S0304380013004043)
 
-- [Velasco, J. A. & González-Salazar, C. (2019). Akaike information criterion should not be a “test” of geographical prediction accuracy in ecological niche modelling. Ecological Informatics, 51: 25–32.](https://doi.org/10.1016/j.ecoinf.2019.02.005)
+-   [Velasco, J. A. & González-Salazar, C. (2019). Akaike information criterion should not be a “test” of geographical prediction accuracy in ecological niche modelling. Ecological Informatics, 51: 25–32.](https://doi.org/10.1016/j.ecoinf.2019.02.005)
 
-- [Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36: 2290-2299.](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1365-2699.2009.02174.x)
+-   [Veloz, S.D. (2009) Spatially autocorrelated sampling falsely inflates measures of accuracy for presence-only niche models. Journal of Biogeography 36: 2290-2299.](https://onlinelibrary.wiley.com/doi/abs/10.1111/j.1365-2699.2009.02174.x)
 
-- [Warren, D. L. & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. Ecological Applications, 21: 335–342.](https://doi.org/10.1890/10-1171.1)
+-   [Warren, D. L. & Seifert, S. N. (2011). Ecological niche modeling in Maxent: the importance of model complexity and the performance of model selection criteria. Ecological Applications, 21: 335–342.](https://doi.org/10.1890/10-1171.1)
 
 ###### Null ENMs
 
-- [Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. Journal of Biogeography, 46: 1101-1111.](https://doi.org/10.1111/jbi.13573)
+-   [Bohl, C. L., Kass, J. M., & Anderson, R. P. (2019). A new null model approach to quantify performance and significance for ecological niche models of species distributions. Journal of Biogeography, 46: 1101-1111.](https://doi.org/10.1111/jbi.13573)
 
-- [Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. Ecography, 30(5), 727-736.](https://www.jstor.org/stable/30244521)
+-   [Raes, N., & ter Steege, H. (2007). A null-model for significance testing of presence-only species distribution models. Ecography, 30(5), 727-736.](https://www.jstor.org/stable/30244521)
 
 ###### Model Transfer
 
-- [Soley-Guardia, M., Carnaval, A. C., & Anderson, R. P. (2019). Sufficient versus optimal climatic stability during the Late Quaternary: using environmental quality to guide phylogeographic inferences in a Neotropical montane system. Journal of Mammalogy, 100: 1783–1807.](https://doi.org/10.1093/jmammal/gyz162)
+-   [Soley-Guardia, M., Carnaval, A. C., & Anderson, R. P. (2019). Sufficient versus optimal climatic stability during the Late Quaternary: using environmental quality to guide phylogeographic inferences in a Neotropical montane system. Journal of Mammalogy, 100: 1783–1807.](https://doi.org/10.1093/jmammal/gyz162)
 
-- [Wenger, S.J. & Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution, 3: 260-267.](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/j.2041-210X.2011.00170.x)
+-   [Wenger, S.J. & Olden, J.D. (2012) Assessing transferability of ecological models: an underappreciated aspect of statistical validation. Methods in Ecology and Evolution, 3: 260-267.](https://besjournals.onlinelibrary.wiley.com/doi/abs/10.1111/j.2041-210X.2011.00170.x)
 
-- [Wright, A. N., Hijmans, R. J., Schwartz, M. W., & Shaffer, H. B. (2015). Multiple sources of uncertainty affect metrics for ranking conservation risk under climate change. Diversity and Distributions, 21(1), 111-122.](https://doi.org/10.1111/ddi.12257)
+-   [Wright, A. N., Hijmans, R. J., Schwartz, M. W., & Shaffer, H. B. (2015). Multiple sources of uncertainty affect metrics for ranking conservation risk under climate change. Diversity and Distributions, 21(1), 111-122.](https://doi.org/10.1111/ddi.12257)
 
 ###### Metadata
 
-- [Feng, X., Park, D. S., Walker, C., Peterson, A. T., Merow, C., & Papeş, M. (2019). A checklist for maximizing reproducibility of ecological niche models. Nature Ecology and Evolution, 3: 1382–1395.](https://doi.org/10.1038/s41559-019-0972-5)
+-   [Feng, X., Park, D. S., Walker, C., Peterson, A. T., Merow, C., & Papeş, M. (2019). A checklist for maximizing reproducibility of ecological niche models. Nature Ecology and Evolution, 3: 1382–1395.](https://doi.org/10.1038/s41559-019-0972-5)
 
-- [Merow, C., Maitner, B. S., Owens, H. L., Kass, J. M., Enquist, B. J., Jetz, W., & Guralnick, R. (2019). Species’ range model metadata standards: RMMS. Global Ecology and Biogeography, 28: 1912–1924.](https://doi.org/10.1111/geb.12993)
+-   [Merow, C., Maitner, B. S., Owens, H. L., Kass, J. M., Enquist, B. J., Jetz, W., & Guralnick, R. (2019). Species’ range model metadata standards: RMMS. Global Ecology and Biogeography, 28: 1912–1924.](https://doi.org/10.1111/geb.12993)
 
-- [Zurell, D., Franklin, J., König, C., Bouchet, P. J., Dormann, C. F., Elith, J., Fandos, G., Feng, X., Guillera‐Arroita, G., Guisan, A. & Lahoz‐Monfort, J. J. (2020). A standard protocol for reporting species distribution models. Ecography, 43: 1261–1277.](https://doi.org/10.1111/ecog.04960)
+-   [Zurell, D., Franklin, J., König, C., Bouchet, P. J., Dormann, C. F., Elith, J., Fandos, G., Feng, X., Guillera‐Arroita, G., Guisan, A. & Lahoz‐Monfort, J. J. (2020). A standard protocol for reporting species distribution models. Ecography, 43: 1261–1277.](https://doi.org/10.1111/ecog.04960)
 
 ###### R Packages for ENMs
 
-- Baumgartner, J., & Wilson, P. (2021). _rmaxent: Tools for working with Maxent in R_. R package version 0.8.5.9000, URL:
-[https://github.com/johnbaums/rmaxent](https://github.com/johnbaums/rmaxent).
+-   Baumgartner, J., & Wilson, P. (2021). *rmaxent: Tools for working with Maxent in R*. R package version 0.8.5.9000, URL: <https://github.com/johnbaums/rmaxent>.
 
-- [Cobos, M. E., Peterson, A. T., Barve, N., & Osorio-Olvera, L. (2019). kuenm: an R package for detailed development of ecological niche models using Maxent. PeerJ, 7: e6281](http://dx.doi.org/10.7717/peerj.6281)
+-   [Cobos, M. E., Peterson, A. T., Barve, N., & Osorio-Olvera, L. (2019). kuenm: an R package for detailed development of ecological niche models using Maxent. PeerJ, 7: e6281](http://dx.doi.org/10.7717/peerj.6281)
 
-- [Di Cola, V., Broennimann, O., Petitpierre, B., Breiner, F. T., d'Amen, M., Randin, C., ... & Guisan, A. (2017). ecospat: an R package to support spatial analyses and modeling of species niches and distributions. Ecography, 40(6), 774-787.](https://doi.org/10.1111/ecog.02671)
+-   [Di Cola, V., Broennimann, O., Petitpierre, B., Breiner, F. T., d'Amen, M., Randin, C., ... & Guisan, A. (2017). ecospat: an R package to support spatial analyses and modeling of species niches and distributions. Ecography, 40(6), 774-787.](https://doi.org/10.1111/ecog.02671)
 
-- Lamigueiro, O. P., & Hijmans, R. (2021). rasterVis. R package version 0.50.2. URL: [https://oscarperpinan.github.io/rastervis/](https://oscarperpinan.github.io/rastervis/).
+-   Lamigueiro, O. P., & Hijmans, R. (2021). rasterVis. R package version 0.50.2. URL: <https://oscarperpinan.github.io/rastervis/>.
 
-- [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](https://doi.org/10.1111/2041-210X.12261)
+-   [Muscarella, R., Galante, P. J., Soley-Guardia, M., Boria, R. A., Kass, J. M., Uriarte, M. & Anderson, R. P. (2014). ENMeval: An R package for conducting spatially independent evaluations and estimating optimal model complexity for Maxent ecological niche models. Methods in Ecology and Evolution, 5: 1198–1205.](https://doi.org/10.1111/2041-210X.12261)
 
-- [Valavi, R., Elith, J., Lahoz-Monfort, J. J., & Guillera-Arroita G. (2019) blockCV: An R package for generating spatially or environmentally separated folds for k-fold cross-validation of species distribution models. Methods in Ecology and Evolution, 10:225–232.](https://doi.org/10.1111/2041-210X.13107)
-  
-- Wickham H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York. [https://ggplot2.tidyverse.org](https://ggplot2.tidyverse.org). 
+-   [Valavi, R., Elith, J., Lahoz-Monfort, J. J., & Guillera-Arroita G. (2019) blockCV: An R package for generating spatially or environmentally separated folds for k-fold cross-validation of species distribution models. Methods in Ecology and Evolution, 10:225–232.](https://doi.org/10.1111/2041-210X.13107)
 
+-   Wickham H. (2016). ggplot2: Elegant Graphics for Data Analysis. Springer-Verlag New York. <https://ggplot2.tidyverse.org>.

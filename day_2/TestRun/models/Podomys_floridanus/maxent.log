@@ -1,0 +1,655 @@
+Thu Mar 21 14:13:23 GMT 2024
+MaxEnt version 3.4.4
+Reading file Podomys_floridanus_background.csv
+readGrid: max memory 947912704, total allocated 270532608, free 250155944, used 20376664, increment 20376664
+Reading samples from Podomys_floridanus.csv
+Read samples: max memory 947912704, total allocated 270532608, free 261150208, used 9382400, increment -10994264
+Adding samples to background in feature space
+Command line used:  -e TestRun/backgrounds/Podomys_floridanus_background.csv -s occurrences/Podomys_floridanus.csv -J -o TestRun/models/Podomys_floridanus noaskoverwrite logistic threshold -X 20 replicates=4 betamultiplier=1 responsecurves=false writeclampgrid=false writemess=false nowarnings writeplotdata=false -a Subsample linear=true quadratic=true product=true threshold=true hinge=true togglelayertype=NA
+Command line to repeat: java density.MaxEnt nowarnings noprefixes jackknife outputformat=logistic outputdirectory=TestRun/models/Podomys_floridanus samplesfile=occurrences/Podomys_floridanus.csv environmentallayers=TestRun/backgrounds/Podomys_floridanus_background.csv randomseed nowarnings noaskoverwrite nowriteclampgrid nowritemess randomtestpoints=20 replicates=4 replicatetype=subsample threshold autorun
+Species: Podomys_floridanus_0 Podomys_floridanus_1 Podomys_floridanus_2 Podomys_floridanus_3
+Layers: bio_1 bio_12 bio_14 bio_6 bio_9
+Layertypes: Continuous Continuous Continuous Continuous Continuous
+jackknife: true
+outputformat: logistic
+outputdirectory: TestRun/models/Podomys_floridanus
+samplesfile: occurrences/Podomys_floridanus.csv
+environmentallayers: TestRun/backgrounds/Podomys_floridanus_background.csv
+randomseed: true
+warnings: false
+askoverwrite: false
+writeclampgrid: false
+writemess: false
+randomtestpoints: 20
+replicates: 4
+replicatetype: subsample
+threshold: true
+autorun: true
+
+getSamples: max memory 947912704, total allocated 270532608, free 259095112, used 11437496, increment 2055096
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 258778728, used 11753880, increment 316384
+Podomys_floridanus_0: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 257202520, used 13330088, increment 1576208
+linearPredictor: max memory 947912704, total allocated 270532608, free 257202520, used 13330088, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 257112712, used 13419896, increment 89808
+Sequential: max memory 947912704, total allocated 270532608, free 257112712, used 13419896, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+500: time = 0.442000 loss = 6.427102 testLoss 6.351530
+Resulting gain: 0.6427724002757165
+Projecting...
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_0.csv
+Jackknife: leave bio_1 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 213772080, used 56760528, increment 43340632
+Podomys_floridanus_0 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 212730880, used 57801728, increment 1041200
+linearPredictor: max memory 947912704, total allocated 270532608, free 212730880, used 57801728, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 212730880, used 57801728, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 212730880, used 57801728, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+500: time = 0.336000 loss = 6.449339 testLoss 6.366706
+Jackknife: leave bio_12 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 191570416, used 78962192, increment 21160464
+Podomys_floridanus_0 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+Time since start: 1.001
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 190188544, used 80344064, increment 1381872
+linearPredictor: max memory 947912704, total allocated 270532608, free 190188544, used 80344064, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 190188544, used 80344064, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 190188544, used 80344064, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+500: time = 0.285000 loss = 6.445149 testLoss 6.409036
+Jackknife: leave bio_14 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 236674352, used 33858256, increment -46485808
+Podomys_floridanus_0 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 235768832, used 34763776, increment 905520
+linearPredictor: max memory 947912704, total allocated 270532608, free 235768832, used 34763776, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 235768832, used 34763776, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 235768832, used 34763776, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+500: time = 0.340000 loss = 6.445487 testLoss 6.348238
+Jackknife: leave bio_6 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 212177920, used 58354688, increment 23590912
+Podomys_floridanus_0 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 211129344, used 59403264, increment 1048576
+linearPredictor: max memory 947912704, total allocated 270532608, free 211129344, used 59403264, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 211129344, used 59403264, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 211129344, used 59403264, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+420: time = 0.260000 loss = 6.458157 testLoss 6.316025
+Jackknife: leave bio_9 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 191539696, used 78992912, increment 19589648
+Podomys_floridanus_0 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 190680064, used 79852544, increment 859632
+linearPredictor: max memory 947912704, total allocated 270532608, free 190680064, used 79852544, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 190680064, used 79852544, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 190680064, used 79852544, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+Time since start: 2.249
+500: time = 0.319000 loss = 6.496153 testLoss 6.406222
+Jackknife: only bio_1
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 165754464, used 104778144, increment 24925600
+Podomys_floridanus_0 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 165087120, used 105445488, increment 667344
+linearPredictor: max memory 947912704, total allocated 270532608, free 165087120, used 105445488, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 165087120, used 105445488, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 165087120, used 105445488, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+140: time = 0.031000 loss = 6.603358 testLoss 6.487854
+Res.gain: 0.466516228373699
+Jackknife: only bio_12
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 159319952, used 111212656, increment 5767168
+Podomys_floridanus_0 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 158700544, used 111832064, increment 619408
+linearPredictor: max memory 947912704, total allocated 270532608, free 158700544, used 111832064, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 158700544, used 111832064, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 158700544, used 111832064, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+160: time = 0.060000 loss = 6.847955 testLoss 6.664182
+Res.gain: 0.22191921112741575
+Jackknife: only bio_14
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 151455632, used 119076976, increment 7244912
+Podomys_floridanus_0 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 150834992, used 119697616, increment 620640
+linearPredictor: max memory 947912704, total allocated 270532608, free 150834992, used 119697616, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 150834992, used 119697616, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 150834992, used 119697616, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+240: time = 0.043000 loss = 6.690528 testLoss 6.597099
+Res.gain: 0.37934662603525027
+Jackknife: only bio_6
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 141208048, used 129324560, increment 9626944
+Podomys_floridanus_0 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 140874752, used 129657856, increment 333296
+linearPredictor: max memory 947912704, total allocated 270532608, free 140874752, used 129657856, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 140874752, used 129657856, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 140874752, used 129657856, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+220: time = 0.060000 loss = 6.635114 testLoss 6.589406
+Res.gain: 0.4347602183655974
+Jackknife: only bio_9
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 131770864, used 138761744, increment 9103888
+Podomys_floridanus_0 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 130911232, used 139621376, increment 859632
+linearPredictor: max memory 947912704, total allocated 270532608, free 130911232, used 139621376, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 130911232, used 139621376, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 130911232, used 139621376, increment 0
+Initial loss: 7.069874128458572
+Initial test loss: 7.069874128458572
+160: time = 0.037000 loss = 6.840953 testLoss 6.828717
+Res.gain: 0.22892075058368455
+getSamples: max memory 947912704, total allocated 270532608, free 116230400, used 154302208, increment 14680832
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 115565872, used 154966736, increment 664528
+Podomys_floridanus_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 114660352, used 155872256, increment 905520
+linearPredictor: max memory 947912704, total allocated 270532608, free 114660352, used 155872256, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 114660352, used 155872256, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 114660352, used 155872256, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+500: time = 0.364000 loss = 6.438553 testLoss 6.357873
+Resulting gain: 0.636410469686469
+Projecting...
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_1.csv
+Jackknife: leave bio_1 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 217134688, used 53397920, increment -102474336
+Podomys_floridanus_1 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 215702832, used 54829776, increment 1431856
+linearPredictor: max memory 947912704, total allocated 270532608, free 215702832, used 54829776, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 215702832, used 54829776, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 215702832, used 54829776, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+Time since start: 3.305
+500: time = 0.316000 loss = 6.457088 testLoss 6.380245
+Jackknife: leave bio_12 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 193112560, used 77420048, increment 22590272
+Podomys_floridanus_1 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 191582384, used 78950224, increment 1530176
+linearPredictor: max memory 947912704, total allocated 270532608, free 191582384, used 78950224, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 191582384, used 78950224, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 191582384, used 78950224, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+500: time = 0.239000 loss = 6.478879 testLoss 6.287710
+Jackknife: leave bio_14 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 168900192, used 101632416, increment 22682192
+Podomys_floridanus_1 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 167468336, used 103064272, increment 1431856
+linearPredictor: max memory 947912704, total allocated 270532608, free 167468336, used 103064272, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 167468336, used 103064272, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 167468336, used 103064272, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+440: time = 0.294000 loss = 6.453732 testLoss 6.370544
+Jackknife: leave bio_6 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 147401072, used 123131536, increment 20067264
+Podomys_floridanus_1 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 146496800, used 124035808, increment 904272
+linearPredictor: max memory 947912704, total allocated 270532608, free 146496800, used 124035808, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 146496800, used 124035808, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 146496800, used 124035808, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+380: time = 0.223000 loss = 6.455317 testLoss 6.417023
+Jackknife: leave bio_9 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 128625136, used 141907472, increment 17871664
+Podomys_floridanus_1 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 127622448, used 142910160, increment 1002688
+linearPredictor: max memory 947912704, total allocated 270532608, free 127622448, used 142910160, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 127622448, used 142910160, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 127622448, used 142910160, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+Time since start: 4.48
+500: time = 0.377000 loss = 6.491578 testLoss 6.458858
+Jackknife: only bio_1
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 111893808, used 158638800, increment 15728640
+Podomys_floridanus_1 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 111371568, used 159161040, increment 522240
+linearPredictor: max memory 947912704, total allocated 270532608, free 111371568, used 159161040, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 111371568, used 159161040, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 111371568, used 159161040, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+180: time = 0.041000 loss = 6.603124 testLoss 6.536220
+Res.gain: 0.47183959232326433
+Jackknife: only bio_12
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 103888480, used 166644128, increment 7483088
+Podomys_floridanus_1 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 103364192, used 167168416, increment 524288
+linearPredictor: max memory 947912704, total allocated 270532608, free 103364192, used 167168416, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 103364192, used 167168416, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 103364192, used 167168416, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+180: time = 0.070000 loss = 6.805024 testLoss 6.944346
+Res.gain: 0.26993967044121714
+Jackknife: only bio_14
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 245636480, used 24896128, increment -142272288
+Podomys_floridanus_1 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 245370448, used 25162160, increment 266032
+linearPredictor: max memory 947912704, total allocated 270532608, free 245370448, used 25162160, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 245370448, used 25162160, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 245370448, used 25162160, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+460: time = 0.078000 loss = 6.694142 testLoss 6.625053
+Res.gain: 0.3808210929077216
+Jackknife: only bio_6
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 226762112, used 43770496, increment 18608336
+Podomys_floridanus_1 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 226094768, used 44437840, increment 667344
+linearPredictor: max memory 947912704, total allocated 270532608, free 226094768, used 44437840, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 226094768, used 44437840, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 226094768, used 44437840, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+240: time = 0.061000 loss = 6.643593 testLoss 6.556997
+Res.gain: 0.4313700358987145
+Jackknife: only bio_9
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 215885648, used 54646960, increment 10209120
+Podomys_floridanus_1 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 215370832, used 55161776, increment 514816
+linearPredictor: max memory 947912704, total allocated 270532608, free 215370832, used 55161776, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 215370832, used 55161776, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 215370832, used 55161776, increment 0
+Initial loss: 7.074963197966044
+Initial test loss: 7.074963197966044
+360: time = 0.080000 loss = 6.854679 testLoss 6.786678
+Res.gain: 0.22028464137962267
+getSamples: max memory 947912704, total allocated 270532608, free 193350736, used 77181872, increment 22020096
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 192683392, used 77849216, increment 667344
+Podomys_floridanus_2: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 191774464, used 78758144, increment 908928
+linearPredictor: max memory 947912704, total allocated 270532608, free 191774464, used 78758144, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 191774464, used 78758144, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 191774464, used 78758144, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+500: time = 0.351000 loss = 6.428116 testLoss 6.409099
+Resulting gain: 0.6426083526112096
+Projecting...
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_2.csv
+Jackknife: leave bio_1 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 143924608, used 126608000, increment 47849856
+Podomys_floridanus_2 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 143019088, used 127513520, increment 905520
+linearPredictor: max memory 947912704, total allocated 270532608, free 143019088, used 127513520, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 143019088, used 127513520, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 143019088, used 127513520, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+Time since start: 5.589
+500: time = 0.313000 loss = 6.456919 testLoss 6.375789
+Jackknife: leave bio_12 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 119424080, used 151108528, increment 23595008
+Podomys_floridanus_2 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 118375504, used 152157104, increment 1048576
+linearPredictor: max memory 947912704, total allocated 270532608, free 118375504, used 152157104, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 118375504, used 152157104, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 118375504, used 152157104, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+500: time = 0.236000 loss = 6.454762 testLoss 6.433218
+Jackknife: leave bio_14 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 95690112, used 174842496, increment 22685392
+Podomys_floridanus_2 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 94784592, used 175748016, increment 905520
+linearPredictor: max memory 947912704, total allocated 270532608, free 94784592, used 175748016, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 94784592, used 175748016, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 94784592, used 175748016, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+500: time = 0.328000 loss = 6.438962 testLoss 6.419594
+Jackknife: leave bio_6 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 222996976, used 47535632, increment -128212384
+Podomys_floridanus_2 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 221414680, used 49117928, increment 1582296
+linearPredictor: max memory 947912704, total allocated 270532608, free 221414680, used 49117928, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 221414680, used 49117928, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 221414680, used 49117928, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+480: time = 0.276000 loss = 6.448419 testLoss 6.414760
+Jackknife: leave bio_9 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 200118544, used 70414064, increment 21296136
+Podomys_floridanus_2 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 198879728, used 71652880, increment 1238816
+linearPredictor: max memory 947912704, total allocated 270532608, free 198879728, used 71652880, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 198879728, used 71652880, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 198879728, used 71652880, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+Time since start: 6.77
+500: time = 0.305000 loss = 6.495191 testLoss 6.414505
+Jackknife: only bio_1
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 175668000, used 94864608, increment 23211728
+Podomys_floridanus_2 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 175524944, used 95007664, increment 143056
+linearPredictor: max memory 947912704, total allocated 270532608, free 175524944, used 95007664, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 175524944, used 95007664, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 175524944, used 95007664, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+140: time = 0.029000 loss = 6.590242 testLoss 6.584435
+Res.gain: 0.48048201970273485
+Jackknife: only bio_12
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 168852256, used 101680352, increment 6672688
+Podomys_floridanus_2 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 168852256, used 101680352, increment 0
+linearPredictor: max memory 947912704, total allocated 270532608, free 168852256, used 101680352, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 168852256, used 101680352, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 168852256, used 101680352, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+160: time = 0.058000 loss = 6.833622 testLoss 6.729359
+Res.gain: 0.2371018228853643
+Jackknife: only bio_14
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 162179568, used 108353040, increment 6672688
+Podomys_floridanus_2 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 161653232, used 108879376, increment 526336
+linearPredictor: max memory 947912704, total allocated 270532608, free 161653232, used 108879376, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 161653232, used 108879376, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 161653232, used 108879376, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+280: time = 0.049000 loss = 6.716251 testLoss 6.508361
+Res.gain: 0.3544730113766308
+Jackknife: only bio_6
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 150118896, used 120413712, increment 11534336
+Podomys_floridanus_2 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 149596656, used 120935952, increment 522240
+linearPredictor: max memory 947912704, total allocated 270532608, free 149596656, used 120935952, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 149596656, used 120935952, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 149596656, used 120935952, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+380: time = 0.096000 loss = 6.636120 testLoss 6.578382
+Res.gain: 0.4346037228364228
+Jackknife: only bio_9
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 133963136, used 136569472, increment 15633520
+Podomys_floridanus_2 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 133963136, used 136569472, increment 0
+linearPredictor: max memory 947912704, total allocated 270532608, free 133963136, used 136569472, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 133963136, used 136569472, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 133963136, used 136569472, increment 0
+Initial loss: 7.0707241072602764
+Initial test loss: 7.0707241072602764
+140: time = 0.028000 loss = 6.824548 testLoss 6.894613
+Res.gain: 0.24617629522189688
+getSamples: max memory 947912704, total allocated 270532608, free 119709424, used 150823184, increment 14253712
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 119423312, used 151109296, increment 286112
+Podomys_floridanus_3: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 118139376, used 152393232, increment 1283936
+linearPredictor: max memory 947912704, total allocated 270532608, free 118139376, used 152393232, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 118139376, used 152393232, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 118139376, used 152393232, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+500: time = 0.350000 loss = 6.405648 testLoss 6.535287
+Resulting gain: 0.6676217791445218
+Projecting...
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_3.csv
+Jackknife: leave bio_1 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 226857904, used 43674704, increment -108718528
+Podomys_floridanus_3 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 226476672, used 44055936, increment 381232
+linearPredictor: max memory 947912704, total allocated 270532608, free 226476672, used 44055936, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 226476672, used 44055936, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 226476672, used 44055936, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+Time since start: 7.796
+500: time = 0.312000 loss = 6.425360 testLoss 6.554675
+Jackknife: leave bio_12 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 202588144, used 67944464, increment 23888528
+Podomys_floridanus_3 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 201833088, used 68699520, increment 755056
+linearPredictor: max memory 947912704, total allocated 270532608, free 201833088, used 68699520, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 201833088, used 68699520, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 201833088, used 68699520, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+500: time = 0.234000 loss = 6.443784 testLoss 6.498111
+Jackknife: leave bio_14 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 179385872, used 91146736, increment 22447216
+Podomys_floridanus_3 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 177715840, used 92816768, increment 1670032
+linearPredictor: max memory 947912704, total allocated 270532608, free 177715840, used 92816768, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 177715840, used 92816768, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 177715840, used 92816768, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+460: time = 0.297000 loss = 6.414540 testLoss 6.583660
+Jackknife: leave bio_6 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 157222720, used 113309888, increment 20493120
+Podomys_floridanus_3 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 156603312, used 113929296, increment 619408
+linearPredictor: max memory 947912704, total allocated 270532608, free 156603312, used 113929296, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 156603312, used 113929296, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 156603312, used 113929296, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+400: time = 0.230000 loss = 6.425541 testLoss 6.552614
+Jackknife: leave bio_9 out
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 138205296, used 132327312, increment 18398016
+Podomys_floridanus_3 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 137585888, used 132946720, increment 619408
+linearPredictor: max memory 947912704, total allocated 270532608, free 137585888, used 132946720, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 137585888, used 132946720, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 137585888, used 132946720, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+Time since start: 8.901
+500: time = 0.307000 loss = 6.472945 testLoss 6.495004
+Jackknife: only bio_1
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 114517216, used 156015392, increment 23068672
+Podomys_floridanus_3 bio_1: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 113752704, used 156779904, increment 764512
+linearPredictor: max memory 947912704, total allocated 270532608, free 113752704, used 156779904, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 113752704, used 156779904, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 113752704, used 156779904, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+160: time = 0.033000 loss = 6.591651 testLoss 6.561163
+Res.gain: 0.48161876712140916
+Jackknife: only bio_12
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 107034128, used 163498480, increment 6718576
+Podomys_floridanus_3 bio_12: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 107015808, used 163516800, increment 18320
+linearPredictor: max memory 947912704, total allocated 270532608, free 107004304, used 163528304, increment 11504
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 107000208, used 163532400, increment 4096
+Sequential: max memory 947912704, total allocated 270532608, free 106994064, used 163538544, increment 6144
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+240: time = 0.088000 loss = 6.788970 testLoss 6.990631
+Res.gain: 0.2842998893536084
+Jackknife: only bio_14
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 96548368, used 173984240, increment 10445696
+Podomys_floridanus_3 bio_14: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 96548368, used 173984240, increment 0
+linearPredictor: max memory 947912704, total allocated 270532608, free 96548368, used 173984240, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 96548368, used 173984240, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 96548368, used 173984240, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+320: time = 0.057000 loss = 6.678749 testLoss 6.675534
+Res.gain: 0.39452098806960745
+Jackknife: only bio_6
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 234562960, used 35969648, increment -138014592
+Podomys_floridanus_3 bio_6: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 233895616, used 36636992, increment 667344
+linearPredictor: max memory 947912704, total allocated 270532608, free 233895616, used 36636992, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 233895616, used 36636992, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 233895616, used 36636992, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+280: time = 0.074000 loss = 6.622735 testLoss 6.616369
+Res.gain: 0.4505350951635716
+Jackknife: only bio_9
+Making features
+makeFeatures: max memory 947912704, total allocated 270532608, free 222208768, used 48323840, increment 11686848
+Podomys_floridanus_3 bio_9: 
+Regularization values: linear/quadratic/product: 0.050, categorical: 0.250, threshold: 1.000, hinge: 0.500
+125 samples
+Density: max memory 947912704, total allocated 270532608, free 221836992, used 48695616, increment 371776
+linearPredictor: max memory 947912704, total allocated 270532608, free 221836992, used 48695616, increment 0
+FeaturedSpace: max memory 947912704, total allocated 270532608, free 221836992, used 48695616, increment 0
+Sequential: max memory 947912704, total allocated 270532608, free 221836992, used 48695616, increment 0
+Initial loss: 7.07326971745971
+Initial test loss: 7.07326971745971
+140: time = 0.031000 loss = 6.826982 testLoss 6.996749
+Res.gain: 0.2462878628201688
+Reading file Podomys_floridanus_background.csv
+readGrid: max memory 947912704, total allocated 270532608, free 164829840, used 105702768, increment 57007152
+Reading file Podomys_floridanus_background.csv
+readGrid: max memory 947912704, total allocated 270532608, free 160114064, used 110418544, increment 4715776
+Reading file Podomys_floridanus_background.csv
+readGrid: max memory 947912704, total allocated 270532608, free 155391160, used 115141448, increment 4722904
+Reading file Podomys_floridanus_background.csv
+readGrid: max memory 947912704, total allocated 270532608, free 151199120, used 119333488, increment 4192040
+Creating average grid, stddev grid etc.
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_avg.csv
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_stddev.csv
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_min.csv
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_max.csv
+Writing file TestRun/models/Podomys_floridanus/Podomys_floridanus_median.csv
+Ending
